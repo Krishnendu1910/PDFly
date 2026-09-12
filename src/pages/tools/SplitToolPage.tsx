@@ -13,10 +13,11 @@ import { Dropzone } from '@/components/file/Dropzone';
 import { FileErrorBanner } from '@/components/file/FileErrorBanner';
 import { RangeInput } from '@/components/pdf/RangeInput';
 import { ProcessingOverlay } from '@/components/pdf/ProcessingOverlay';
+import { DownloadResultDocket, type OutputFileItem } from '@/components/download';
+import { getDefaultDownloadFilename, getSplitDefaultFilename } from '@/utils/filenameUtils';
 import {
   getPdfPageCount,
   splitPdfDocument,
-  downloadPdfBytes,
   PdfOperationError,
 } from '@/lib/pdf';
 import type { FileValidationError } from '@/types/file';
@@ -40,6 +41,7 @@ export const SplitToolPage: FC = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [progressPercent, setProgressPercent] = useState(0);
   const [operationErrors, setOperationErrors] = useState<FileValidationError[]>([]);
+  const [splitOutputs, setSplitOutputs] = useState<OutputFileItem[] | null>(null);
 
   const {
     files,
@@ -62,6 +64,7 @@ export const SplitToolPage: FC = () => {
       setPageCount(null);
       setRangeString('');
       setIsRangeValid(false);
+      setSplitOutputs(null);
       return;
     }
 
@@ -100,17 +103,62 @@ export const SplitToolPage: FC = () => {
     setOperationErrors([]);
 
     try {
-      const result = await splitPdfDocument(activeFile.file, rangeString, {
-        onProgress: (pct) => {
-          setProgressPercent(pct);
-          setProcessingStatus(`Extracting pages (${pct}%)...`);
-        },
-      });
+      // Check if user specified multiple segments (e.g. "1-3, 5, 8-10")
+      const segments = rangeString
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean);
 
-      const baseName = activeFile.name.replace(/\.[^/.]+$/, '');
-      const outName = `${baseName}_split.pdf`;
+      const isMultiSegment = segments.length > 1;
+      const outputs: OutputFileItem[] = [];
 
-      downloadPdfBytes(result.pdfBytes, outName);
+      if (isMultiSegment) {
+        for (let i = 0; i < segments.length; i++) {
+          const segment = segments[i];
+          const result = await splitPdfDocument(activeFile.file, segment, {
+            onProgress: (pct) => {
+              const totalPct = Math.round(((i + pct / 100) / segments.length) * 100);
+              setProgressPercent(totalPct);
+              setProcessingStatus(`Extracting range "${segment}" (${i + 1} of ${segments.length})...`);
+            },
+          });
+
+          const defaultFilename = getSplitDefaultFilename({
+            originalFilename: activeFile.name,
+            index: i + 1,
+            totalOutputs: segments.length,
+          });
+
+          outputs.push({
+            id: `split-output-${i + 1}`,
+            pdfBytes: result.pdfBytes,
+            defaultFilename,
+            byteSize: result.pdfBytes.byteLength,
+            label: `Range: ${segment} (${result.totalOutputPages} ${result.totalOutputPages === 1 ? 'page' : 'pages'})`,
+            pageCount: result.totalOutputPages,
+          });
+        }
+      } else {
+        // Single segment or unified range
+        const result = await splitPdfDocument(activeFile.file, rangeString, {
+          onProgress: (pct) => {
+            setProgressPercent(pct);
+            setProcessingStatus(`Extracting pages (${pct}%)...`);
+          },
+        });
+
+        const defaultFilename = getDefaultDownloadFilename('split', activeFile.name);
+        outputs.push({
+          id: 'split-output-1',
+          pdfBytes: result.pdfBytes,
+          defaultFilename,
+          byteSize: result.pdfBytes.byteLength,
+          label: `Extracted ${result.totalOutputPages} ${result.totalOutputPages === 1 ? 'page' : 'pages'}`,
+          pageCount: result.totalOutputPages,
+        });
+      }
+
+      setSplitOutputs(outputs);
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'An error occurred while splitting the PDF.';
       const code = err instanceof PdfOperationError ? err.code : 'UNKNOWN_ERROR';
@@ -183,19 +231,31 @@ export const SplitToolPage: FC = () => {
           </div>
         )}
 
-        {/* Workspace */}
-        <div className="space-y-8">
-          {/* File Selection */}
-          {!hasFiles ? (
-            <Dropzone
-              onFilesSelected={addFiles}
-              config={SPLIT_TOOL_CONFIG}
-              multiple={false}
-              title="Select or drop a PDF document to split"
-              subtitle="Choose 1 PDF file to extract pages from (up to 50 MB)"
-              disabled={isProcessing}
-            />
-          ) : (
+        {/* Workspace or Download Docket */}
+        {splitOutputs ? (
+          <DownloadResultDocket
+            outputs={splitOutputs}
+            toolName="Split Document"
+            toolIdentifier="[TOOL // 02 · RANGE SEPARATOR]"
+            isSplitBatch={splitOutputs.length > 1}
+            onReset={() => {
+              setSplitOutputs(null);
+              clearFiles();
+            }}
+          />
+        ) : (
+          <div className="space-y-8">
+            {/* File Selection */}
+            {!hasFiles ? (
+              <Dropzone
+                onFilesSelected={addFiles}
+                config={SPLIT_TOOL_CONFIG}
+                multiple={false}
+                title="Select or drop a PDF document to split"
+                subtitle="Choose 1 PDF file to extract pages from (up to 50 MB)"
+                disabled={isProcessing}
+              />
+            ) : (
             <div className="p-6 rounded-2xl border border-border bg-card shadow-xs space-y-6">
               {/* Selected File Card */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-5 border-b border-border">
@@ -300,6 +360,7 @@ export const SplitToolPage: FC = () => {
             </Card>
           </div>
         </div>
+        )}
       </Container>
 
       {/* Processing Indicator Modal */}

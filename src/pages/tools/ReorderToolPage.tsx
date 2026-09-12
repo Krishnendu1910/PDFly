@@ -13,11 +13,12 @@ import { Dropzone } from '@/components/file/Dropzone';
 import { FileErrorBanner } from '@/components/file/FileErrorBanner';
 import { PageThumbnailCard } from '@/components/pdf/PageThumbnailCard';
 import { ProcessingOverlay } from '@/components/pdf/ProcessingOverlay';
+import { DownloadResultDocket, type OutputFileItem } from '@/components/download';
+import { getDefaultDownloadFilename } from '@/utils/filenameUtils';
 import {
   getPdfPageCount,
   renderPageThumbnail,
   reorderPdfDocument,
-  downloadPdfBytes,
   PdfOperationError,
   type PdfPageDescriptor,
 } from '@/lib/pdf';
@@ -42,6 +43,7 @@ export const ReorderToolPage: FC = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [progressPercent, setProgressPercent] = useState(0);
   const [operationErrors, setOperationErrors] = useState<FileValidationError[]>([]);
+  const [outputResult, setOutputResult] = useState<OutputFileItem | null>(null);
 
   const {
     files,
@@ -186,10 +188,13 @@ export const ReorderToolPage: FC = () => {
         },
       });
 
-      const baseName = activeFile.name.replace(/\.[^/.]+$/, '');
-      const outName = `${baseName}_reordered.pdf`;
-
-      downloadPdfBytes(resultBytes, outName);
+      const defaultFilename = getDefaultDownloadFilename('reorder', activeFile.name);
+      setOutputResult({
+        id: 'reordered-output',
+        pdfBytes: resultBytes,
+        defaultFilename,
+        byteSize: resultBytes.byteLength,
+      });
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Failed to reorder PDF pages.';
       const code = err instanceof PdfOperationError ? err.code : 'PROCESSING_FAILED';
@@ -262,146 +267,160 @@ export const ReorderToolPage: FC = () => {
           </div>
         )}
 
-        {/* Main Workspace */}
-        <div className="space-y-8">
-          {!hasFiles ? (
-            <Dropzone
-              onFilesSelected={addFiles}
-              config={REORDER_TOOL_CONFIG}
-              multiple={false}
-              title="Select or drop a PDF document to reorder"
-              subtitle="Choose 1 PDF file (up to 50 MB)"
-              disabled={isProcessing}
-            />
-          ) : (
-            <div className="p-6 rounded-2xl border border-border bg-card shadow-xs space-y-6">
-              {/* Toolbar */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-5 border-b border-border">
-                <div>
-                  <h3 className="text-base font-bold text-foreground flex items-center gap-2">
-                    <span>{activeFile?.name}</span>
-                    <Badge variant="outline" size="sm" className="font-mono">
-                      {pages.length} of {initialCount} pages
-                    </Badge>
-                  </h3>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    Use the arrow buttons below each thumbnail to rearrange page sequence.
-                  </p>
-                </div>
+        {/* Main Workspace / Download Docket */}
+        {outputResult ? (
+          <DownloadResultDocket
+            outputs={[outputResult]}
+            toolName="Reordered PDF"
+            toolIdentifier="[TOOL // 03 · LIGHT TABLE]"
+            onReset={() => {
+              setOutputResult(null);
+              clearFiles();
+            }}
+          />
+        ) : (
+          <div className="space-y-8">
+            {!hasFiles ? (
+              <Dropzone
+                onFilesSelected={addFiles}
+                config={REORDER_TOOL_CONFIG}
+                multiple={false}
+                title="Select or drop a PDF document to reorder"
+                subtitle="Choose 1 PDF file (up to 50 MB)"
+                disabled={isProcessing}
+              />
+            ) : (
+              <div className="p-6 rounded-2xl border border-border bg-card shadow-xs space-y-6">
+                {/* Toolbar */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-5 border-b border-border">
+                  <div>
+                    <h3 className="text-base font-bold text-foreground flex items-center gap-2">
+                      <span>{activeFile?.name}</span>
+                      <Badge variant="outline" size="sm" className="font-mono">
+                        {pages.length} of {initialCount} pages
+                      </Badge>
+                    </h3>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Use the arrow buttons below each thumbnail to rearrange page sequence.
+                    </p>
+                  </div>
 
-                <div className="flex items-center gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={handleResetOrder}
-                    disabled={isProcessing || pages.length <= 1}
-                    className="text-xs"
-                  >
-                    <RotateCcw className="w-3.5 h-3.5 mr-1" aria-hidden="true" />
-                    Reset Order
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={handleResetOrder}
+                      disabled={isProcessing || pages.length <= 1}
+                      className="text-xs"
+                    >
+                      <RotateCcw className="w-3.5 h-3.5 mr-1" aria-hidden="true" />
+                      Reset Order
+                    </Button>
 
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={clearFiles}
-                    disabled={isProcessing}
-                    className="text-xs text-muted-foreground hover:text-destructive"
-                  >
-                    Change File
-                  </Button>
-                </div>
-              </div>
-
-              {/* Grid of Pages */}
-              {pages.length === 0 ? (
-                <div className="py-12 text-center text-muted-foreground text-sm">
-                  All pages have been removed. Click &quot;Reset Order&quot; or choose another file.
-                </div>
-              ) : (
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 max-h-[600px] overflow-y-auto pr-1">
-                  {pages.map((page, idx) => (
-                    <PageThumbnailCard
-                      key={page.id}
-                      pageNumber={page.pageNumber}
-                      displayIndex={idx}
-                      totalDisplayPages={pages.length}
-                      rotation={page.rotation}
-                      thumbnailUrl={page.thumbnailUrl}
-                      thumbnailStatus={page.thumbnailStatus}
-                      draggable={true}
-                      isDragTarget={dragOverIndex === idx}
-                      onDragStart={handleDragStart}
-                      onDragOver={handleDragOver}
-                      onDragLeave={handleDragLeave}
-                      onDrop={handleDrop}
-                      onMoveLeft={(pos) => handleMove(pos, pos - 1)}
-                      onMoveRight={(pos) => handleMove(pos, pos + 1)}
-                      onRemove={handleRemove}
-                      showReorderControls={true}
-                      showRemoveControl={true}
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={clearFiles}
                       disabled={isProcessing}
-                    />
-                  ))}
-                </div>
-              )}
-
-              {/* Action Bar */}
-              <div className="pt-4 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-4">
-                <div className="text-xs text-muted-foreground">
-                  {pages.length > 0 ? (
-                    <span className="text-emerald-600 dark:text-emerald-400 font-medium">
-                      {pages.length} pages will be saved in the displayed sequence.
-                    </span>
-                  ) : (
-                    <span className="text-destructive font-medium">
-                      At least one page is required to generate a PDF.
-                    </span>
-                  )}
+                      className="text-xs text-muted-foreground hover:text-destructive"
+                    >
+                      Change File
+                    </Button>
+                  </div>
                 </div>
 
-                <Button
-                  size="lg"
-                  disabled={pages.length === 0 || isProcessing}
-                  onClick={handleSaveReorder}
-                  className="w-full sm:w-auto shadow-sm"
-                >
-                  <span>Save Reordered PDF</span>
-                  <ArrowRight className="w-4 h-4 ml-2" aria-hidden="true" />
-                </Button>
+                {/* Grid of Pages */}
+                {pages.length === 0 ? (
+                  <div className="py-12 text-center text-muted-foreground text-sm">
+                    All pages have been removed. Click &quot;Reset Order&quot; or choose another file.
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 max-h-[600px] overflow-y-auto pr-1">
+                    {pages.map((page, idx) => (
+                      <PageThumbnailCard
+                        key={page.id}
+                        pageNumber={page.pageNumber}
+                        displayIndex={idx}
+                        totalDisplayPages={pages.length}
+                        rotation={page.rotation}
+                        thumbnailUrl={page.thumbnailUrl}
+                        thumbnailStatus={page.thumbnailStatus}
+                        draggable={true}
+                        isDragTarget={dragOverIndex === idx}
+                        onDragStart={handleDragStart}
+                        onDragOver={handleDragOver}
+                        onDragLeave={handleDragLeave}
+                        onDrop={handleDrop}
+                        onMoveLeft={(pos) => handleMove(pos, pos - 1)}
+                        onMoveRight={(pos) => handleMove(pos, pos + 1)}
+                        onRemove={handleRemove}
+                        showReorderControls={true}
+                        showRemoveControl={true}
+                        disabled={isProcessing}
+                      />
+                    ))}
+                  </div>
+                )}
+
+                {/* Action Bar */}
+                <div className="pt-4 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-4">
+                  <div className="text-xs text-muted-foreground">
+                    {pages.length > 0 ? (
+                      <span className="text-emerald-600 dark:text-emerald-400 font-medium">
+                        {pages.length} pages will be saved in the displayed sequence.
+                      </span>
+                    ) : (
+                      <span className="text-destructive font-medium">
+                        At least one page is required to generate a PDF.
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="w-full sm:w-auto">
+                    <Button
+                      size="lg"
+                      disabled={pages.length === 0 || isProcessing}
+                      onClick={handleSaveReorder}
+                      className="w-full sm:w-auto shadow-sm"
+                    >
+                      <span>Save & Download PDF</span>
+                      <ArrowRight className="w-4 h-4 ml-2" aria-hidden="true" />
+                    </Button>
+                  </div>
+                </div>
               </div>
+            )}
+
+            {/* Architectural Security Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <Card className="border-border bg-card">
+                <CardContent className="p-5 flex items-start gap-3">
+                  <ShieldCheck className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" aria-hidden="true" />
+                  <div>
+                    <h3 className="text-sm font-semibold text-foreground">Local Memory Security</h3>
+                    <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                      Thumbnails and page structures are computed locally in your web browser. Nothing is ever sent to external cloud servers.
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="border-border bg-card">
+                <CardContent className="p-5 flex items-start gap-3">
+                  <Zap className="w-5 h-5 text-primary shrink-0 mt-0.5" aria-hidden="true" />
+                  <div>
+                    <h3 className="text-sm font-semibold text-foreground">Lossless Reordering</h3>
+                    <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                      Pages are reassembled directly from source PDF streams without lossy rasterization or compression degradation.
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
-          )}
-
-          {/* Privacy Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Card className="border-border bg-card">
-              <CardContent className="p-5 flex items-start gap-3">
-                <ShieldCheck className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" aria-hidden="true" />
-                <div>
-                  <h3 className="text-sm font-semibold text-foreground">Local Memory Security</h3>
-                  <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
-                    Thumbnails and page structures are computed locally in your web browser. Nothing is ever sent to external cloud servers.
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="border-border bg-card">
-              <CardContent className="p-5 flex items-start gap-3">
-                <Zap className="w-5 h-5 text-primary shrink-0 mt-0.5" aria-hidden="true" />
-                <div>
-                  <h3 className="text-sm font-semibold text-foreground">Lossless Reordering</h3>
-                  <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
-                    Pages are reassembled directly from source PDF streams without lossy rasterization or compression degradation.
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
           </div>
-        </div>
+        )}
       </Container>
 
       {/* Processing Indicator Modal */}

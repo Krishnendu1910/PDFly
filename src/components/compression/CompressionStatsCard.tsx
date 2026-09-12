@@ -7,7 +7,7 @@ import type { CompressionResult } from '@/lib/pdf';
 
 export interface CompressionStatsCardProps {
   result: CompressionResult;
-  onDownload: () => void;
+  onDownload?: () => void;
   disabled?: boolean;
 }
 
@@ -59,15 +59,17 @@ export const CompressionStatsCard: FC<CompressionStatsCardProps> = ({
           </div>
         </div>
 
-        <Button
-          size="lg"
-          onClick={onDownload}
-          disabled={disabled}
-          className="w-full sm:w-auto shadow-sm"
-        >
-          <Download className="w-4 h-4 mr-2" aria-hidden="true" />
-          <span>Download PDF</span>
-        </Button>
+        {onDownload && (
+          <Button
+            size="lg"
+            onClick={onDownload}
+            disabled={disabled}
+            className="w-full sm:w-auto shadow-sm"
+          >
+            <Download className="w-4 h-4 mr-2" aria-hidden="true" />
+            <span>Download PDF</span>
+          </Button>
+        )}
       </div>
 
       {/* Metrics Grid */}

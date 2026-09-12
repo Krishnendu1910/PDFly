@@ -24,10 +24,11 @@ import { FileErrorBanner } from '@/components/file/FileErrorBanner';
 import { ProcessingOverlay } from '@/components/pdf/ProcessingOverlay';
 import { CompressionModeSelector } from '@/components/compression/CompressionModeSelector';
 import { CompressionStatsCard } from '@/components/compression/CompressionStatsCard';
+import { DownloadResultDocket } from '@/components/download';
+import { getDefaultDownloadFilename } from '@/utils/filenameUtils';
 import {
   detectPdfCharacteristics,
   compressPdfDocument,
-  downloadPdfBytes,
   PdfOperationError,
   type CompressionMode,
   type CompressionResult,
@@ -135,13 +136,6 @@ export const CompressToolPage: FC = () => {
       setIsProcessing(false);
       setProgressPercent(0);
     }
-  };
-
-  const handleDownload = () => {
-    if (!activeFile || !compressionResult) return;
-    const baseName = activeFile.name.replace(/\.[^/.]+$/, '');
-    const outName = `${baseName}_compressed.pdf`;
-    downloadPdfBytes(compressionResult.outputBytes, outName);
   };
 
   const handleReset = () => {
@@ -317,11 +311,25 @@ export const CompressToolPage: FC = () => {
 
               {/* Compression Results Display */}
               {compressionResult && (
-                <CompressionStatsCard
-                  result={compressionResult}
-                  onDownload={handleDownload}
-                  disabled={isProcessing}
-                />
+                <div className="space-y-6">
+                  <CompressionStatsCard
+                    result={compressionResult}
+                    disabled={isProcessing}
+                  />
+
+                  <DownloadResultDocket
+                    outputs={[
+                      {
+                        id: 'output-compressed',
+                        pdfBytes: compressionResult.outputBytes,
+                        defaultFilename: getDefaultDownloadFilename('compress', activeFile.name),
+                        byteSize: compressionResult.compressedBytes,
+                        label: 'Compressed Document',
+                      },
+                    ]}
+                    onReset={handleReset}
+                  />
+                </div>
               )}
             </div>
           )}

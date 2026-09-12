@@ -13,11 +13,12 @@ import { Dropzone } from '@/components/file/Dropzone';
 import { FileErrorBanner } from '@/components/file/FileErrorBanner';
 import { PageThumbnailCard } from '@/components/pdf/PageThumbnailCard';
 import { ProcessingOverlay } from '@/components/pdf/ProcessingOverlay';
+import { DownloadResultDocket, type OutputFileItem } from '@/components/download';
+import { getDefaultDownloadFilename } from '@/utils/filenameUtils';
 import {
   getPdfPageCount,
   renderPageThumbnail,
   rotatePdfDocument,
-  downloadPdfBytes,
   PdfOperationError,
   type PdfPageDescriptor,
   type PdfRotationAngle,
@@ -41,6 +42,7 @@ export const RotateToolPage: FC = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [progressPercent, setProgressPercent] = useState(0);
   const [operationErrors, setOperationErrors] = useState<FileValidationError[]>([]);
+  const [outputResult, setOutputResult] = useState<OutputFileItem | null>(null);
 
   const {
     files,
@@ -187,10 +189,13 @@ export const RotateToolPage: FC = () => {
         },
       });
 
-      const baseName = activeFile.name.replace(/\.[^/.]+$/, '');
-      const outName = `${baseName}_rotated.pdf`;
-
-      downloadPdfBytes(rotatedBytes, outName);
+      const defaultFilename = getDefaultDownloadFilename('rotate', activeFile.name);
+      setOutputResult({
+        id: 'rotated-output',
+        pdfBytes: rotatedBytes,
+        defaultFilename,
+        byteSize: rotatedBytes.byteLength,
+      });
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Failed to apply rotation.';
       const code = err instanceof PdfOperationError ? err.code : 'PROCESSING_FAILED';
@@ -263,96 +268,107 @@ export const RotateToolPage: FC = () => {
           </div>
         )}
 
-        {/* Main Workspace */}
-        <div className="space-y-8">
-          {!hasFiles ? (
-            <Dropzone
-              onFilesSelected={addFiles}
-              config={ROTATE_TOOL_CONFIG}
-              multiple={false}
-              title="Select or drop a PDF document to rotate"
-              subtitle="Choose 1 PDF file (up to 50 MB)"
-              disabled={isProcessing}
-            />
-          ) : (
-            <div className="p-6 rounded-2xl border border-border bg-card shadow-xs space-y-6">
-              {/* Batch Action Toolbar */}
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-5 border-b border-border">
-                <div>
-                  <h3 className="text-base font-bold text-foreground flex items-center gap-2">
-                    <span>{activeFile?.name}</span>
-                    <Badge variant="outline" size="sm" className="font-mono">
-                      {pages.length} pages
-                    </Badge>
-                  </h3>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    {selectedPages.size > 0
-                      ? `Rotating ${selectedPages.size} selected pages`
-                      : 'Click individual buttons or use bulk rotation tools below'}
-                  </p>
-                </div>
+        {/* Main Workspace / Download Docket */}
+        {outputResult ? (
+          <DownloadResultDocket
+            outputs={[outputResult]}
+            toolName="Rotated PDF"
+            toolIdentifier="[TOOL // 04 · ORIENTATION TABLE]"
+            onReset={() => {
+              setOutputResult(null);
+              clearFiles();
+            }}
+          />
+        ) : (
+          <div className="space-y-8">
+            {!hasFiles ? (
+              <Dropzone
+                onFilesSelected={addFiles}
+                config={ROTATE_TOOL_CONFIG}
+                multiple={false}
+                title="Select or drop a PDF document to rotate"
+                subtitle="Choose 1 PDF file (up to 50 MB)"
+                disabled={isProcessing}
+              />
+            ) : (
+              <div className="p-6 rounded-2xl border border-border bg-card shadow-xs space-y-6">
+                {/* Batch Action Toolbar */}
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-5 border-b border-border">
+                  <div>
+                    <h3 className="text-base font-bold text-foreground flex items-center gap-2">
+                      <span>{activeFile?.name}</span>
+                      <Badge variant="outline" size="sm" className="font-mono">
+                        {pages.length} pages
+                      </Badge>
+                    </h3>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {selectedPages.size > 0
+                        ? `Rotating ${selectedPages.size} selected pages`
+                        : 'Click individual buttons or use bulk rotation tools below'}
+                    </p>
+                  </div>
 
-                <div className="flex flex-wrap items-center gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => bulkRotate(90)}
-                    disabled={isProcessing}
-                    className="text-xs"
-                  >
-                    <RotateCw className="w-3.5 h-3.5 mr-1" aria-hidden="true" />
-                    Rotate 90° CW
-                  </Button>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => bulkRotate(90)}
+                      disabled={isProcessing}
+                      className="text-xs"
+                    >
+                      <RotateCw className="w-3.5 h-3.5 mr-1" aria-hidden="true" />
+                      Rotate 90° CW
+                    </Button>
 
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => bulkRotate(270)}
-                    disabled={isProcessing}
-                    className="text-xs"
-                  >
-                    <RotateCcw className="w-3.5 h-3.5 mr-1" aria-hidden="true" />
-                    Rotate 90° CCW
-                  </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => bulkRotate(270)}
+                      disabled={isProcessing}
+                      className="text-xs"
+                    >
+                      <RotateCcw className="w-3.5 h-3.5 mr-1" aria-hidden="true" />
+                      Rotate 90° CCW
+                    </Button>
 
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => bulkRotate(180)}
-                    disabled={isProcessing}
-                    className="text-xs"
-                  >
-                    180°
-                  </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => bulkRotate(180)}
+                      disabled={isProcessing}
+                      className="text-xs"
+                    >
+                      180°
+                    </Button>
 
-                  {hasAnyRotation && (
+                    {hasAnyRotation && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={resetAllRotations}
+                        disabled={isProcessing}
+                        className="text-xs text-muted-foreground hover:text-foreground"
+                      >
+                        Reset
+                      </Button>
+                    )}
+
                     <Button
                       type="button"
                       variant="ghost"
                       size="sm"
-                      onClick={resetAllRotations}
+                      onClick={clearFiles}
                       disabled={isProcessing}
-                      className="text-xs text-muted-foreground hover:text-foreground"
+                      className="text-xs text-muted-foreground hover:text-destructive"
                     >
-                      Reset
+                      Change File
                     </Button>
-                  )}
-
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={clearFiles}
-                    disabled={isProcessing}
-                    className="text-xs text-muted-foreground hover:text-destructive"
-                  >
-                    Change File
-                  </Button>
+                  </div>
                 </div>
-              </div>
 
               {/* Selection Bar */}
               <div className="flex items-center justify-between text-xs text-muted-foreground">
@@ -439,7 +455,8 @@ export const RotateToolPage: FC = () => {
               </CardContent>
             </Card>
           </div>
-        </div>
+          </div>
+        )}
       </Container>
 
       {/* Processing Indicator Modal */}

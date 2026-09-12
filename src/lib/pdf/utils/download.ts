@@ -23,9 +23,8 @@ export function sanitizeDownloadFilename(name: string, fallback = 'document.pdf'
 
   if (!clean) return fallback;
 
-  // Remove .pdf extension if present so we can cap the base name cleanly
-  const hasPdfExt = clean.toLowerCase().endsWith('.pdf');
-  let baseWithoutExt = hasPdfExt ? clean.slice(0, -4) : clean;
+  // Remove all trailing .pdf extensions (case-insensitive) so we never duplicate extensions
+  let baseWithoutExt = clean.replace(/(\.pdf)+$/i, '');
 
   // Collapse multiple consecutive spaces or underscores and trim trailing separators
   baseWithoutExt = baseWithoutExt

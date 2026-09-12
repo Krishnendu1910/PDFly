@@ -23,11 +23,12 @@ import { Dropzone } from '@/components/file/Dropzone';
 import { FileErrorBanner } from '@/components/file/FileErrorBanner';
 import { ProcessingOverlay } from '@/components/pdf/ProcessingOverlay';
 import { ImageThumbnailCard } from '@/components/image/ImageThumbnailCard';
+import { DownloadResultDocket, type OutputFileItem } from '@/components/download';
+import { getDefaultDownloadFilename } from '@/utils/filenameUtils';
 import {
   validateImageFile,
   readImageDimensions,
   convertImagesToPdf,
-  downloadPdfBytes,
   PdfOperationError,
   type ImageDescriptor,
   type PdfRotationAngle,
@@ -47,6 +48,7 @@ export const ImagesToPdfToolPage: FC = () => {
   const [progressPercent, setProgressPercent] = useState(0);
   const [progressMessage, setProgressMessage] = useState('Preparing image conversion...');
   const [operationErrors, setOperationErrors] = useState<FileValidationError[]>([]);
+  const [outputResult, setOutputResult] = useState<OutputFileItem | null>(null);
 
   // Ref to track active object URLs for memory leak prevention
   const activeUrlsRef = useRef<Set<string>>(new Set());
@@ -283,7 +285,14 @@ export const ImagesToPdfToolPage: FC = () => {
         },
       });
 
-      downloadPdfBytes(pdfBytes, 'images-to-pdf.pdf');
+      const defaultFilename = getDefaultDownloadFilename('images-to-pdf');
+      setOutputResult({
+        id: 'output-images-to-pdf',
+        pdfBytes,
+        defaultFilename,
+        byteSize: pdfBytes.byteLength,
+        label: 'Compiled PDF Document',
+      });
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'An error occurred during PDF generation.';
       const code = err instanceof PdfOperationError ? err.code : 'PROCESSING_FAILED';
@@ -355,20 +364,29 @@ export const ImagesToPdfToolPage: FC = () => {
           </div>
         )}
 
-        {/* Pipeline Workspace */}
-        <div className="space-y-8">
-          {/* File Ingestion Dropzone */}
-          {canAddMore && (
-            <div>
-              <Dropzone
-                onFilesSelected={addFiles}
-                config={IMAGE_TO_PDF_CONFIG}
-                title={hasFiles ? 'Add more images' : 'Select or drop image files to convert'}
-                subtitle="Accepts JPEG, PNG, and WebP images. Up to 50 files, maximum 25 MB each."
-                disabled={isProcessing}
-              />
-            </div>
-          )}
+        {/* Pipeline Workspace or Download Docket */}
+        {outputResult ? (
+          <DownloadResultDocket
+            outputs={[outputResult]}
+            onReset={() => {
+              setOutputResult(null);
+              clearFiles();
+            }}
+          />
+        ) : (
+          <div className="space-y-8">
+            {/* File Ingestion Dropzone */}
+            {canAddMore && (
+              <div>
+                <Dropzone
+                  onFilesSelected={addFiles}
+                  config={IMAGE_TO_PDF_CONFIG}
+                  title={hasFiles ? 'Add more images' : 'Select or drop image files to convert'}
+                  subtitle="Accepts JPEG, PNG, and WebP images. Up to 50 files, maximum 25 MB each."
+                  disabled={isProcessing}
+                />
+              </div>
+            )}
 
           {/* Selected Images Workspace */}
           {hasFiles && (
@@ -496,6 +514,7 @@ export const ImagesToPdfToolPage: FC = () => {
             </Card>
           </div>
         </div>
+      )}
       </Container>
 
       {/* Processing Indicator Modal */}

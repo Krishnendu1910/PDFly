@@ -13,7 +13,9 @@ import { Dropzone } from '@/components/file/Dropzone';
 import { FileList } from '@/components/file/FileList';
 import { FileErrorBanner } from '@/components/file/FileErrorBanner';
 import { ProcessingOverlay } from '@/components/pdf/ProcessingOverlay';
-import { mergePdfDocuments, downloadPdfBytes, PdfOperationError } from '@/lib/pdf';
+import { DownloadResultDocket, type OutputFileItem } from '@/components/download';
+import { getDefaultDownloadFilename } from '@/utils/filenameUtils';
+import { mergePdfDocuments, PdfOperationError } from '@/lib/pdf';
 import type { FileValidationError } from '@/types/file';
 
 export const MergeToolPage: FC = () => {
@@ -25,6 +27,7 @@ export const MergeToolPage: FC = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [progressPercent, setProgressPercent] = useState(0);
   const [operationErrors, setOperationErrors] = useState<FileValidationError[]>([]);
+  const [outputResult, setOutputResult] = useState<OutputFileItem | null>(null);
 
   const {
     files,
@@ -65,7 +68,13 @@ export const MergeToolPage: FC = () => {
         },
       });
 
-      downloadPdfBytes(mergedBytes, 'merged.pdf');
+      const defaultFilename = getDefaultDownloadFilename('merge', files[0]?.file.name);
+      setOutputResult({
+        id: 'merged-output',
+        pdfBytes: mergedBytes,
+        defaultFilename,
+        byteSize: mergedBytes.byteLength,
+      });
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'An unexpected error occurred during merging.';
       const code = err instanceof PdfOperationError ? err.code : 'UNKNOWN_ERROR';
@@ -144,91 +153,103 @@ export const MergeToolPage: FC = () => {
           </div>
         )}
 
-        {/* Pipeline Workspace */}
-        <div className="space-y-8">
-          {/* File Ingestion Dropzone */}
-          {canAddMore && (
-            <div>
-              <Dropzone
-                onFilesSelected={addFiles}
-                config={MERGE_PDF_CONFIG}
-                title={hasFiles ? 'Add more PDF files' : 'Select or drop PDF documents to merge'}
-                subtitle="Only PDF documents are accepted. Maximum 50 MB per file."
-                disabled={isProcessing}
-              />
-            </div>
-          )}
+        {/* Pipeline Workspace / Download Docket */}
+        {outputResult ? (
+          <DownloadResultDocket
+            outputs={[outputResult]}
+            toolName="Merged PDF"
+            toolIdentifier="[TOOL // 01 · SHEET STACKER]"
+            onReset={() => {
+              setOutputResult(null);
+              clearFiles();
+            }}
+          />
+        ) : (
+          <div className="space-y-8">
+            {/* File Ingestion Dropzone */}
+            {canAddMore && (
+              <div>
+                <Dropzone
+                  onFilesSelected={addFiles}
+                  config={MERGE_PDF_CONFIG}
+                  title={hasFiles ? 'Add more PDF files' : 'Select or drop PDF documents to merge'}
+                  subtitle="Only PDF documents are accepted. Maximum 50 MB per file."
+                  disabled={isProcessing}
+                />
+              </div>
+            )}
 
-          {/* Selected File List & Controls */}
-          {hasFiles && (
-            <div className="p-6 rounded-2xl border border-border bg-card shadow-xs space-y-6">
-              <FileList
-                files={files}
-                totalSizeFormatted={formattedTotalSize}
-                onRemoveFile={removeFile}
-                onClearFiles={clearFiles}
-                onMoveUp={moveUp}
-                onMoveDown={moveDown}
-                disabled={isProcessing}
-              />
+            {/* Selected File List & Controls */}
+            {hasFiles && (
+              <div className="p-6 rounded-2xl border border-border bg-card shadow-xs space-y-6">
+                <FileList
+                  files={files}
+                  totalSizeFormatted={formattedTotalSize}
+                  onRemoveFile={removeFile}
+                  onClearFiles={clearFiles}
+                  onMoveUp={moveUp}
+                  onMoveDown={moveDown}
+                  disabled={isProcessing}
+                />
 
-              {/* Action Bar */}
-              <div className="pt-4 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-4">
-                <div className="text-xs text-muted-foreground">
-                  {!isValidForAction ? (
-                    <span className="text-amber-600 dark:text-amber-400 font-medium">
-                      Select at least {minFilesRequired} files to enable merging (currently {files.length}).
-                    </span>
-                  ) : (
-                    <span className="text-emerald-600 dark:text-emerald-400 font-medium flex items-center gap-1.5">
-                      <CheckCircle2 className="w-4 h-4 inline" aria-hidden="true" />
-                      {files.length} PDF files ready to merge (total size: {formattedTotalSize}).
-                    </span>
-                  )}
-                </div>
+                {/* Action Bar */}
+                <div className="pt-4 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-4">
+                  <div className="text-xs text-muted-foreground">
+                    {!isValidForAction ? (
+                      <span className="text-amber-600 dark:text-amber-400 font-medium">
+                        Select at least {minFilesRequired} files to enable merging (currently {files.length}).
+                      </span>
+                    ) : (
+                      <span className="text-emerald-600 dark:text-emerald-400 font-medium flex items-center gap-1.5">
+                        <CheckCircle2 className="w-4 h-4 inline" aria-hidden="true" />
+                        {files.length} PDF files ready to merge (total size: {formattedTotalSize}).
+                      </span>
+                    )}
+                  </div>
 
-                <div className="w-full sm:w-auto">
-                  <Button
-                    size="lg"
-                    disabled={!isValidForAction || isProcessing}
-                    onClick={handleMerge}
-                    className="w-full sm:w-auto shadow-sm"
-                  >
-                    <span>Merge {files.length} PDFs</span>
-                    <ArrowRight className="w-4 h-4 ml-2" aria-hidden="true" />
-                  </Button>
+                  <div className="w-full sm:w-auto">
+                    <Button
+                      size="lg"
+                      disabled={!isValidForAction || isProcessing}
+                      onClick={handleMerge}
+                      className="w-full sm:w-auto shadow-sm"
+                    >
+                      <span>Merge {files.length} PDFs</span>
+                      <ArrowRight className="w-4 h-4 ml-2" aria-hidden="true" />
+                    </Button>
+                  </div>
                 </div>
               </div>
+            )}
+
+            {/* Architecture Assurance Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <Card className="border-border bg-card">
+                <CardContent className="p-5 flex items-start gap-3">
+                  <ShieldCheck className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" aria-hidden="true" />
+                  <div>
+                    <h3 className="text-sm font-semibold text-foreground">100% Client-Side Privacy</h3>
+                    <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                      Documents are merged directly inside browser memory via WebAssembly/Web APIs. Files never leave your device.
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="border-border bg-card">
+                <CardContent className="p-5 flex items-start gap-3">
+                  <Zap className="w-5 h-5 text-primary shrink-0 mt-0.5" aria-hidden="true" />
+                  <div>
+                    <h3 className="text-sm font-semibold text-foreground">Instant Download</h3>
+                    <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                      Merged documents are generated instantaneously without queue times or server-side bandwidth limits.
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
-          )}
-
-          {/* Architecture Assurance Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Card className="border-border bg-card">
-              <CardContent className="p-5 flex items-start gap-3">
-                <ShieldCheck className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" aria-hidden="true" />
-                <div>
-                  <h3 className="text-sm font-semibold text-foreground">100% Client-Side Privacy</h3>
-                  <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
-                    Documents are merged directly inside browser memory via WebAssembly/Web APIs. Files never leave your device.
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="border-border bg-card">
-              <CardContent className="p-5 flex items-start gap-3">
-                <Zap className="w-5 h-5 text-primary shrink-0 mt-0.5" aria-hidden="true" />
-                <div>
-                  <h3 className="text-sm font-semibold text-foreground">Instant Download</h3>
-                  <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
-                    Merged documents are generated instantaneously without queue times or server-side bandwidth limits.
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
           </div>
-        </div>
+        )}
       </Container>
 
       {/* Processing Indicator Modal */}
