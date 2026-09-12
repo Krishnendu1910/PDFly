@@ -10,6 +10,13 @@ export const ROUTES = {
   TOOL_IMAGES_TO_PDF: '/tools/images-to-pdf',
   TOOL_COMPRESS: '/tools/compress',
   TOOL_PDF_TO_IMAGES: '/tools/pdf-to-images',
+  TOOL_REMOVE_PAGES: '/tools/remove-pages',
+  TOOL_EXTRACT: '/tools/extract',
+  TOOL_PAGE_NUMBERS: '/tools/page-numbers',
+  TOOL_WATERMARK: '/tools/watermark',
+  TOOL_CROP: '/tools/crop',
+  TOOL_PDF_TO_MARKDOWN: '/tools/pdf-to-markdown',
+  TOOL_SIGN: '/tools/sign',
   TOOL_DETAIL: (slug: string) => `/tools/${slug}`,
 } as const;
 

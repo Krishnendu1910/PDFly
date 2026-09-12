@@ -10,6 +10,7 @@ import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 const categories: { id: ToolCategory; label: string }[] = [
   { id: 'all', label: 'All Tools' },
   { id: 'organize', label: 'Organize' },
+  { id: 'edit', label: 'Edit' },
   { id: 'convert', label: 'Convert' },
   { id: 'optimize', label: 'Optimize' },
 ];

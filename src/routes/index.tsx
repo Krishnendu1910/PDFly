@@ -9,7 +9,6 @@ import { ToolsIndexPage } from '@/pages/tools/ToolsIndexPage';
 import { ToolPlaceholderPage } from '@/pages/tools/ToolPlaceholderPage';
 import { NotFoundPage } from '@/pages/NotFound/NotFoundPage';
 
-// Lazy-load PDF tool pages so pdf-lib / pdfjs-dist are not in the main landing bundle
 const MergeToolPage = lazy(() =>
   import('@/pages/tools/MergeToolPage').then((m) => ({ default: m.MergeToolPage })),
 );
@@ -27,6 +26,30 @@ const ImagesToPdfToolPage = lazy(() =>
 );
 const CompressToolPage = lazy(() =>
   import('@/pages/tools/CompressToolPage').then((m) => ({ default: m.CompressToolPage })),
+);
+const RemovePagesToolPage = lazy(() =>
+  import('@/pages/tools/RemovePagesToolPage').then((m) => ({ default: m.RemovePagesToolPage })),
+);
+const ExtractToolPage = lazy(() =>
+  import('@/pages/tools/ExtractToolPage').then((m) => ({ default: m.ExtractToolPage })),
+);
+const PdfToImagesToolPage = lazy(() =>
+  import('@/pages/tools/PdfToImagesToolPage').then((m) => ({ default: m.PdfToImagesToolPage })),
+);
+const PageNumbersToolPage = lazy(() =>
+  import('@/pages/tools/PageNumbersToolPage').then((m) => ({ default: m.PageNumbersToolPage })),
+);
+const WatermarkToolPage = lazy(() =>
+  import('@/pages/tools/WatermarkToolPage').then((m) => ({ default: m.WatermarkToolPage })),
+);
+const CropToolPage = lazy(() =>
+  import('@/pages/tools/CropToolPage').then((m) => ({ default: m.CropToolPage })),
+);
+const PdfToMarkdownToolPage = lazy(() =>
+  import('@/pages/tools/PdfToMarkdownToolPage').then((m) => ({ default: m.PdfToMarkdownToolPage })),
+);
+const SignToolPage = lazy(() =>
+  import('@/pages/tools/SignToolPage').then((m) => ({ default: m.SignToolPage })),
 );
 
 const loadingFallback = (
@@ -109,8 +132,68 @@ export const routes: RouteObject[] = [
             ),
           },
           {
+            path: 'remove-pages',
+            element: (
+              <Suspense fallback={loadingFallback}>
+                <RemovePagesToolPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: 'extract',
+            element: (
+              <Suspense fallback={loadingFallback}>
+                <ExtractToolPage />
+              </Suspense>
+            ),
+          },
+          {
             path: 'pdf-to-images',
-            element: <ToolPlaceholderPage toolId="pdf-to-images" />,
+            element: (
+              <Suspense fallback={loadingFallback}>
+                <PdfToImagesToolPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: 'page-numbers',
+            element: (
+              <Suspense fallback={loadingFallback}>
+                <PageNumbersToolPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: 'watermark',
+            element: (
+              <Suspense fallback={loadingFallback}>
+                <WatermarkToolPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: 'crop',
+            element: (
+              <Suspense fallback={loadingFallback}>
+                <CropToolPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: 'pdf-to-markdown',
+            element: (
+              <Suspense fallback={loadingFallback}>
+                <PdfToMarkdownToolPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: 'sign',
+            element: (
+              <Suspense fallback={loadingFallback}>
+                <SignToolPage />
+              </Suspense>
+            ),
           },
           {
             path: ':toolSlug',

@@ -7,9 +7,16 @@ export type ToolId =
   | 'rotate'
   | 'images-to-pdf'
   | 'compress'
-  | 'pdf-to-images';
+  | 'pdf-to-images'
+  | 'remove-pages'
+  | 'extract'
+  | 'page-numbers'
+  | 'watermark'
+  | 'crop'
+  | 'pdf-to-markdown'
+  | 'sign';
 
-export type ToolCategory = 'all' | 'organize' | 'convert' | 'optimize';
+export type ToolCategory = 'all' | 'organize' | 'convert' | 'optimize' | 'edit';
 
 export interface ToolDefinition {
   id: ToolId;
@@ -18,7 +25,7 @@ export interface ToolDefinition {
   description: string;
   iconName: string;
   icon: LucideIcon;
-  category: 'organize' | 'convert' | 'optimize';
+  category: 'organize' | 'convert' | 'optimize' | 'edit';
   badge?: string;
   popular?: boolean;
 }

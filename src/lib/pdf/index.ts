@@ -8,6 +8,14 @@ export * from './operations/merge';
 export * from './operations/split';
 export * from './operations/reorder';
 export * from './operations/rotate';
+export * from './operations/remove-pages';
+export * from './operations/extract';
+export * from './operations/pdf-to-images';
+export * from './operations/page-numbers';
+export * from './operations/watermark';
+export * from './operations/crop';
+export * from './operations/pdf-to-markdown';
+export * from './operations/sign';
 export * from './images';
 export * from './compression';
 

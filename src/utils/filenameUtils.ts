@@ -60,9 +60,25 @@ export function getDefaultDownloadFilename(toolType: string, originalFilename?: 
       return base ? `${base}-reordered.pdf` : 'reordered.pdf';
     case 'rotate':
       return base ? `${base}-rotated.pdf` : 'rotated.pdf';
+    case 'remove-pages':
+      return base ? `${base}-removed.pdf` : 'removed.pdf';
+    case 'extract':
+      return base ? `${base}-extracted.pdf` : 'extracted.pdf';
     case 'images-to-pdf':
     case 'images':
       return 'images.pdf';
+    case 'pdf-to-images':
+      return base ? `${base}-images` : 'images';
+    case 'page-numbers':
+      return base ? `${base}-numbered.pdf` : 'numbered.pdf';
+    case 'watermark':
+      return base ? `${base}-watermarked.pdf` : 'watermarked.pdf';
+    case 'crop':
+      return base ? `${base}-cropped.pdf` : 'cropped.pdf';
+    case 'pdf-to-markdown':
+      return base ? `${base}.md` : 'document.md';
+    case 'sign':
+      return base ? `${base}-signed.pdf` : 'signed.pdf';
     case 'compress':
       return base ? `${base}-compressed.pdf` : 'compressed.pdf';
     default:
