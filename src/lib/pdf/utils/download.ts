@@ -1,3 +1,5 @@
+import { PdfOperationError } from '../types';
+
 /**
  * Sanitizes a filename for safe client-side browser downloading.
  * Preserves valid Unicode letters, numbers, spaces, dots, and hyphens/underscores.
@@ -25,8 +27,12 @@ export function sanitizeDownloadFilename(name: string, fallback = 'document.pdf'
   const hasPdfExt = clean.toLowerCase().endsWith('.pdf');
   let baseWithoutExt = hasPdfExt ? clean.slice(0, -4) : clean;
 
-  // Collapse multiple consecutive spaces or underscores
-  baseWithoutExt = baseWithoutExt.replace(/\s+/g, ' ').replace(/_+/g, '_').trim();
+  // Collapse multiple consecutive spaces or underscores and trim trailing separators
+  baseWithoutExt = baseWithoutExt
+    .replace(/\s+/g, ' ')
+    .replace(/_+/g, '_')
+    .replace(/[._ ]+$/, '')
+    .trim();
 
   // Cap filename base length (120 chars) to prevent OS filesystem limits
   if (baseWithoutExt.length > 120) {
@@ -45,14 +51,34 @@ export function sanitizeDownloadFilename(name: string, fallback = 'document.pdf'
 
 /**
  * Triggers a browser file download from in-memory byte array or Blob.
+ * Validates the PDF magic byte signature before initiating download to prevent downloading corrupt output.
  * Automatically cleans up the ephemeral Object URL to prevent memory leaks.
  */
 export function downloadPdfBytes(
   bytes: Uint8Array | ArrayBuffer,
   filename: string,
 ): void {
+  const uint8 = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes);
+  if (!uint8 || uint8.length < 5) {
+    throw new PdfOperationError('INVALID_PDF', 'Cannot download empty or truncated PDF output.');
+  }
+
+  // Validate standard PDF magic bytes: %PDF- (0x25, 0x50, 0x44, 0x46, 0x2D)
+  if (
+    uint8[0] !== 0x25 ||
+    uint8[1] !== 0x50 ||
+    uint8[2] !== 0x44 ||
+    uint8[3] !== 0x46 ||
+    uint8[4] !== 0x2d
+  ) {
+    throw new PdfOperationError(
+      'INVALID_PDF',
+      'Cannot download output: Generated data lacks valid PDF header signature.',
+    );
+  }
+
   const safeName = sanitizeDownloadFilename(filename, 'document.pdf');
-  const buffer = bytes instanceof Uint8Array ? (bytes.buffer as ArrayBuffer) : bytes;
+  const buffer = uint8.buffer as ArrayBuffer;
   const blob = new Blob([buffer], { type: 'application/pdf' });
   const objectUrl = URL.createObjectURL(blob);
 

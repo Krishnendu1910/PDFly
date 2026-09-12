@@ -30,6 +30,8 @@ export function getHardenedDocumentOptions(data: Uint8Array | ArrayBuffer) {
     isEvalSupported: false,
     enableScripting: false,
     disableFontFace: false,
+    disableAutoFetch: true,
+    disableStream: true,
   };
 }
 

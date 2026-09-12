@@ -8,7 +8,8 @@ export type PdfErrorCode =
   | 'OUT_OF_BOUNDS_PAGE'
   | 'RENDER_FAILED'
   | 'PROCESSING_FAILED'
-  | 'ENGINE_LOAD_FAILED';
+  | 'ENGINE_LOAD_FAILED'
+  | 'LIMIT_EXCEEDED';
 
 export class PdfOperationError extends Error {
   readonly code: PdfErrorCode;

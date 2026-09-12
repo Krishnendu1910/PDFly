@@ -6,6 +6,7 @@ import { getJpegExifOrientation } from './exif';
 
 export const DEFAULT_MAX_PAGE_DIMENSION = 1440; // ~20 inches at 72 DPI
 export const MAX_SAFE_IMAGE_DIMENSION = 8192; // 8K max canvas dimension to guard against memory crash
+export const MAX_IMAGES_PER_CONVERSION = 100; // Defensive limit against batch image DoS memory exhaustion
 
 /**
  * Standard affine transform matrix [a, b, c, d, e, f] for EXIF orientations 1–8.
@@ -115,7 +116,14 @@ export async function normalizeExifImageBytes(file: File | Blob, orientation: nu
         try {
           const srcW = img.naturalWidth;
           const srcH = img.naturalHeight;
-          const { width: targetW, height: targetH, matrix } = getExifTransform(orientation, srcW, srcH);
+          let scale = 1;
+          const maxDim = Math.max(srcW, srcH);
+          if (maxDim > MAX_SAFE_IMAGE_DIMENSION) {
+            scale = MAX_SAFE_IMAGE_DIMENSION / maxDim;
+          }
+          const scaledW = Math.max(1, Math.round(srcW * scale));
+          const scaledH = Math.max(1, Math.round(srcH * scale));
+          const { width: targetW, height: targetH, matrix } = getExifTransform(orientation, scaledW, scaledH);
           const canvas = document.createElement('canvas');
           canvas.width = targetW;
           canvas.height = targetH;
@@ -125,7 +133,7 @@ export async function normalizeExifImageBytes(file: File | Blob, orientation: nu
             return reject(new Error('Canvas 2D context unavailable.'));
           }
           ctx.setTransform(matrix[0], matrix[1], matrix[2], matrix[3], matrix[4], matrix[5]);
-          ctx.drawImage(img, 0, 0, srcW, srcH);
+          ctx.drawImage(img, 0, 0, scaledW, scaledH);
           URL.revokeObjectURL(url);
           canvas.toBlob(
             (blob) => {
@@ -217,15 +225,27 @@ export async function convertImageToPngBytes(file: File | Blob): Promise<Uint8Ar
       const img = new Image();
       img.onload = async () => {
         try {
+          const width = img.naturalWidth;
+          const height = img.naturalHeight;
+          let targetW = width;
+          let targetH = height;
+          if (Math.max(width, height) > MAX_SAFE_IMAGE_DIMENSION) {
+            const scale = MAX_SAFE_IMAGE_DIMENSION / Math.max(width, height);
+            targetW = Math.max(1, Math.round(width * scale));
+            targetH = Math.max(1, Math.round(height * scale));
+          }
           const canvas = document.createElement('canvas');
           canvas.width = img.naturalWidth;
           canvas.height = img.naturalHeight;
+          canvas.width = targetW;
+          canvas.height = targetH;
           const ctx = canvas.getContext('2d');
           if (!ctx) {
             URL.revokeObjectURL(url);
             return reject(new Error('Could not get Canvas 2D context.'));
           }
           ctx.drawImage(img, 0, 0);
+          ctx.drawImage(img, 0, 0, targetW, targetH);
           URL.revokeObjectURL(url);
           canvas.toBlob((blob) => {
             if (!blob) return reject(new Error('Failed to encode image to PNG.'));
@@ -273,6 +293,13 @@ export async function convertImagesToPdf(
 ): Promise<Uint8Array> {
   if (!images || images.length === 0) {
     throw new PdfOperationError('PROCESSING_FAILED', 'At least one image is required to generate a PDF.');
+  }
+
+  if (images.length > MAX_IMAGES_PER_CONVERSION) {
+    throw new PdfOperationError(
+      'LIMIT_EXCEEDED',
+      `Exceeded maximum allowed images (${MAX_IMAGES_PER_CONVERSION}) for a single PDF conversion.`,
+    );
   }
 
   const { PDFDocument, degrees } = await getPdfLib();
@@ -346,6 +373,13 @@ export async function convertImagesToPdf(
     // Calculate proportional page dimensions
     const rawWidth = embeddedImage.width;
     const rawHeight = embeddedImage.height;
+
+    if (!Number.isFinite(rawWidth) || !Number.isFinite(rawHeight) || rawWidth <= 0 || rawHeight <= 0) {
+      throw new PdfOperationError(
+        'INVALID_PDF',
+        `Image "${item.managedFile.name}" has invalid or corrupted dimensions.`,
+      );
+    }
 
     let scale = 1;
     const largestDim = Math.max(rawWidth, rawHeight);

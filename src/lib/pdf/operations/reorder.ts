@@ -10,6 +10,8 @@ export interface ReorderPdfOptions {
  *
  * Example: For a 3-page PDF, newOrder = [2, 0, 1] puts page 3 first, then page 1, then page 2.
  */
+export const MAX_REORDER_PAGES = 2000; // Defensive limit against page expansion DoS
+
 export async function reorderPdfDocument(
   input: File | Uint8Array,
   newOrder: number[],
@@ -39,32 +41,45 @@ export async function reorderPdfDocument(
     throw new PdfOperationError('CORRUPT_PDF', 'Unable to parse the PDF document.', msg);
   }
 
-  const totalPages = srcDoc.getPageCount();
+  if (newOrder.length > MAX_REORDER_PAGES) {
+    throw new PdfOperationError(
+      'LIMIT_EXCEEDED',
+      `Reordering exceeds the maximum allowed page count of ${MAX_REORDER_PAGES} pages.`,
+    );
+  }
 
-  // Validate all indices in newOrder
-  for (const idx of newOrder) {
-    if (!Number.isInteger(idx) || idx < 0 || idx >= totalPages) {
-      throw new PdfOperationError(
-        'OUT_OF_BOUNDS_PAGE',
-        `Page index ${idx} is invalid for a document with ${totalPages} pages.`,
-      );
+  try {
+    const totalPages = srcDoc.getPageCount();
+
+    // Validate all indices in newOrder
+    for (const idx of newOrder) {
+      if (!Number.isInteger(idx) || idx < 0 || idx >= totalPages) {
+        throw new PdfOperationError(
+          'OUT_OF_BOUNDS_PAGE',
+          `Page index ${idx} is invalid for a document with ${totalPages} pages.`,
+        );
+      }
     }
+
+    const outputDoc = await PDFDocument.create();
+    const copiedPages = await outputDoc.copyPages(srcDoc, newOrder);
+    const totalPagesToReorder = copiedPages.length;
+
+    for (let i = 0; i < totalPagesToReorder; i++) {
+      outputDoc.addPage(copiedPages[i]);
+      options.onProgress?.(Math.round(((i + 1) / totalPagesToReorder) * 90));
+      // Periodically yield to event loop
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    }
+
+    const resultBytes = await outputDoc.save();
+    options.onProgress?.(100);
+
+    return resultBytes;
+  } catch (err) {
+    if (err instanceof PdfOperationError) throw err;
+    const msg = err instanceof Error ? err.message : String(err);
+    throw new PdfOperationError('CORRUPT_PDF', 'Failed to reorder pages: The PDF contains corrupted page data.', msg);
   }
-
-  const outputDoc = await PDFDocument.create();
-  const copiedPages = await outputDoc.copyPages(srcDoc, newOrder);
-  const totalPagesToReorder = copiedPages.length;
-
-  for (let i = 0; i < totalPagesToReorder; i++) {
-    outputDoc.addPage(copiedPages[i]);
-    options.onProgress?.(Math.round(((i + 1) / totalPagesToReorder) * 90));
-    // Periodically yield to event loop
-    await new Promise((resolve) => setTimeout(resolve, 0));
-  }
-
-  const resultBytes = await outputDoc.save();
-  options.onProgress?.(100);
-
-  return resultBytes;
 }
 

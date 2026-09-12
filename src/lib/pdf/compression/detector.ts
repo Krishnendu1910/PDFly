@@ -15,6 +15,7 @@ export async function detectPdfCharacteristics(
   let doc;
   try {
     doc = await PDFDocument.load(pdfBytes);
+    doc = await PDFDocument.load(pdfBytes, { ignoreEncryption: false });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     if (msg.toLowerCase().includes('encrypt') || msg.toLowerCase().includes('password')) {
@@ -30,43 +31,53 @@ export async function detectPdfCharacteristics(
     );
   }
 
-  const pageCount = doc.getPageCount();
-  const fileSizeBytes = pdfBytes.length;
+  try {
+    const pageCount = doc.getPageCount();
+    const fileSizeBytes = pdfBytes.length;
 
-  let imageCount = 0;
-  let totalImageBytes = 0;
+    let imageCount = 0;
+    let totalImageBytes = 0;
 
-  for (const [, obj] of doc.context.enumerateIndirectObjects()) {
-    if (obj && typeof obj === 'object' && 'dict' in obj) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const dict = (obj as any).dict;
-      if (dict && typeof dict.get === 'function') {
-        const subtype = dict.get(PDFName.of('Subtype'));
-        if (subtype && subtype.toString() === '/Image') {
-          imageCount++;
-          if ('getContents' in obj && typeof (obj as { getContents?: () => Uint8Array }).getContents === 'function') {
-            const stream = (obj as { getContents: () => Uint8Array }).getContents();
-            if (stream && stream.length) {
-              totalImageBytes += stream.length;
+    for (const [, obj] of doc.context.enumerateIndirectObjects()) {
+      if (obj && typeof obj === 'object' && 'dict' in obj) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const dict = (obj as any).dict;
+        if (dict && typeof dict.get === 'function') {
+          const subtype = dict.get(PDFName.of('Subtype'));
+          if (subtype && subtype.toString() === '/Image') {
+            imageCount++;
+            if ('getContents' in obj && typeof (obj as { getContents?: () => Uint8Array }).getContents === 'function') {
+              const stream = (obj as { getContents: () => Uint8Array }).getContents();
+              if (stream && stream.length) {
+                totalImageBytes += stream.length;
+              }
             }
           }
         }
       }
     }
-  }
 
-  let contentType: PdfContentType = 'text-vector';
-  if (imageCount > 0 && totalImageBytes > fileSizeBytes * 0.4) {
-    contentType = 'image-heavy';
-  } else if (imageCount > 0) {
-    contentType = 'mixed';
-  }
+    let contentType: PdfContentType = 'text-vector';
+    if (imageCount > 0 && totalImageBytes > fileSizeBytes * 0.4) {
+      contentType = 'image-heavy';
+    } else if (imageCount > 0) {
+      contentType = 'mixed';
+    }
 
-  return {
-    pageCount,
-    imageCount,
-    totalImageBytes,
-    fileSizeBytes,
-    contentType,
-  };
+    return {
+      pageCount,
+      imageCount,
+      totalImageBytes,
+      fileSizeBytes,
+      contentType,
+    };
+  } catch (err) {
+    if (err instanceof PdfOperationError) throw err;
+    const msg = err instanceof Error ? err.message : String(err);
+    throw new PdfOperationError(
+      'CORRUPT_PDF',
+      'The PDF contains corrupted internal structures or page tree.',
+      msg,
+    );
+  }
 }

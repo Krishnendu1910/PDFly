@@ -4,6 +4,8 @@ export interface ParseRangeOptions {
   allowDuplicates?: boolean;
 }
 
+export const MAX_EXTRACTED_PAGES_PER_SPLIT = 2000;
+
 /**
  * Parses and validates page range strings like "1", "1-3", "2,4,7", "1-3,6,9-10".
  *
@@ -119,6 +121,13 @@ export function parsePageRange(
     throw new PdfOperationError(
       'INVALID_PAGE_RANGE',
       'No valid pages were specified in the selection.',
+    );
+  }
+
+  if (collectedPages.length > MAX_EXTRACTED_PAGES_PER_SPLIT) {
+    throw new PdfOperationError(
+      'LIMIT_EXCEEDED',
+      `Selection contains ${collectedPages.length} pages, which exceeds the maximum limit of ${MAX_EXTRACTED_PAGES_PER_SPLIT} pages per operation to prevent browser memory exhaustion.`,
     );
   }
 

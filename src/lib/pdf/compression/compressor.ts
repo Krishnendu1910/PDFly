@@ -47,8 +47,9 @@ async function recompressJpegBytes(
 
         let scale = 1;
         const largest = Math.max(srcW, srcH);
-        if (largest > maxDimension) {
-          scale = maxDimension / largest;
+        const safeMaxDim = Math.min(Math.max(1, maxDimension), 8192);
+        if (largest > safeMaxDim) {
+          scale = safeMaxDim / largest;
         }
 
         const targetW = Math.max(1, Math.round(srcW * scale));
@@ -95,8 +96,9 @@ async function recompressJpegBytes(
             const srcH = img.naturalHeight;
             let scale = 1;
             const largest = Math.max(srcW, srcH);
-            if (largest > maxDimension) {
-              scale = maxDimension / largest;
+            const safeMaxDim = Math.min(Math.max(1, maxDimension), 8192);
+            if (largest > safeMaxDim) {
+              scale = safeMaxDim / largest;
             }
             const targetW = Math.max(1, Math.round(srcW * scale));
             const targetH = Math.max(1, Math.round(srcH * scale));
@@ -166,6 +168,7 @@ export async function compressPdfDocument(
   let doc;
   try {
     doc = await PDFDocument.load(pdfBytes);
+    doc = await PDFDocument.load(pdfBytes, { ignoreEncryption: false });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     if (msg.toLowerCase().includes('encrypt') || msg.toLowerCase().includes('password')) {
@@ -228,9 +231,8 @@ export async function compressPdfDocument(
 
       const rawStreamBytes = typeof obj.getContents === 'function' ? obj.getContents() : null;
       if (rawStreamBytes && rawStreamBytes.length > 2000) {
-        // Only recompress images larger than 2KB to avoid overhead
-        // If hasMask, do not downscale dimensions to preserve mask synchronization
-        const effectiveMaxDim = hasMask ? 999999 : profile.maxDimension;
+        // If hasMask, do not downscale dimensions beyond 8192px safe canvas limit to preserve mask synchronization
+        const effectiveMaxDim = hasMask ? 8192 : profile.maxDimension;
 
         const recompressed = await recompressJpegBytes(
           rawStreamBytes,

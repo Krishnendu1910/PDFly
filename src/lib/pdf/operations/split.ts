@@ -39,35 +39,41 @@ export async function splitPdfDocument(
     throw new PdfOperationError('CORRUPT_PDF', 'Unable to parse the PDF document.', msg);
   }
 
-  const totalPages = srcDoc.getPageCount();
-  if (totalPages === 0) {
-    throw new PdfOperationError('INVALID_PDF', 'The source document contains no pages.');
+  try {
+    const totalPages = srcDoc.getPageCount();
+    if (totalPages === 0) {
+      throw new PdfOperationError('INVALID_PDF', 'The source document contains no pages.');
+    }
+
+    // Parse and validate range expression against totalPages
+    const { pages } = parsePageRange(rangeStr, totalPages, options);
+
+    // Convert 1-based page numbers to 0-based page indices
+    const zeroBasedIndices = pages.map((p) => p - 1);
+    const totalToExtract = zeroBasedIndices.length;
+
+    const outputDoc = await PDFDocument.create();
+    const copiedPages = await outputDoc.copyPages(srcDoc, zeroBasedIndices);
+
+    for (let i = 0; i < copiedPages.length; i++) {
+      outputDoc.addPage(copiedPages[i]);
+      options.onProgress?.(Math.round(((i + 1) / totalToExtract) * 90));
+      // Periodically yield to event loop
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    }
+
+    const pdfBytes = await outputDoc.save();
+    options.onProgress?.(100);
+
+    return {
+      pdfBytes,
+      extractedPageNumbers: pages,
+      totalOutputPages: outputDoc.getPageCount(),
+    };
+  } catch (err) {
+    if (err instanceof PdfOperationError) throw err;
+    const msg = err instanceof Error ? err.message : String(err);
+    throw new PdfOperationError('CORRUPT_PDF', 'Failed to extract pages: The PDF contains corrupted page data.', msg);
   }
-
-  // Parse and validate range expression against totalPages
-  const { pages } = parsePageRange(rangeStr, totalPages, options);
-
-  // Convert 1-based page numbers to 0-based page indices
-  const zeroBasedIndices = pages.map((p) => p - 1);
-  const totalToExtract = zeroBasedIndices.length;
-
-  const outputDoc = await PDFDocument.create();
-  const copiedPages = await outputDoc.copyPages(srcDoc, zeroBasedIndices);
-
-  for (let i = 0; i < copiedPages.length; i++) {
-    outputDoc.addPage(copiedPages[i]);
-    options.onProgress?.(Math.round(((i + 1) / totalToExtract) * 90));
-    // Periodically yield to event loop
-    await new Promise((resolve) => setTimeout(resolve, 0));
-  }
-
-  const pdfBytes = await outputDoc.save();
-  options.onProgress?.(100);
-
-  return {
-    pdfBytes,
-    extractedPageNumbers: pages,
-    totalOutputPages: outputDoc.getPageCount(),
-  };
 }
 
