@@ -69,6 +69,7 @@ export const TOOLS: readonly ToolDefinition[] = [
     iconName: 'FileImage',
     icon: FileImage,
     category: 'convert',
+    badge: 'Coming Soon',
   },
   {
     id: 'compress',

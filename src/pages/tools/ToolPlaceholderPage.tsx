@@ -69,7 +69,7 @@ export const ToolPlaceholderPage: FC<ToolPlaceholderPageProps> = ({ toolId }) =>
               <div>
                 <div className="flex items-center gap-2 mb-1">
                   <Badge variant="warning" size="sm">
-                    Coming in Phase 3
+                    Coming Soon
                   </Badge>
                   <Badge variant="outline" size="sm" className="capitalize">
                     {tool.category}
@@ -98,10 +98,10 @@ export const ToolPlaceholderPage: FC<ToolPlaceholderPageProps> = ({ toolId }) =>
               <Clock className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" aria-hidden="true" />
               <div className="space-y-1 text-sm">
                 <p className="font-semibold text-foreground">
-                  Tool Engine in Active Development
+                  Planned for Future Release
                 </p>
                 <p className="text-muted-foreground leading-relaxed">
-                  The interface shell and route contract for <strong>{tool.name}</strong> are verified and established. The client-side document processing engine will be introduced in subsequent phases after architecture approval.
+                  The interface shell and route contract for <strong>{tool.name}</strong> are verified and established. The client-side document processing engine will be introduced in a future update.
                 </p>
               </div>
             </div>
