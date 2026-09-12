@@ -287,11 +287,75 @@ describe('Phase 12: Crop PDF Operation', () => {
     expect(progressSpy).toHaveBeenCalled();
   });
 
+  it('supports independent per-page crop margins where page 1 crop does not alter page 2', async () => {
+    const sourceBytes = await createTestPdf(2);
+    const result = await cropPdfDocument(sourceBytes, {
+      pageCrops: {
+        1: { top: 10, bottom: 10, left: 10, right: 10 },
+        2: { top: 20, bottom: 0, left: 5, right: 5 },
+      },
+    });
+
+    const doc = await PDFDocument.load(result.pdfBytes);
+    const page1 = doc.getPage(0).getMediaBox();
+    const page2 = doc.getPage(1).getMediaBox();
+
+    // Page 1: 500x700 -> left: 50, right: 50, top: 70, bottom: 70
+    expect(page1.width).toBeCloseTo(400, 1);
+    expect(page1.height).toBeCloseTo(560, 1);
+    expect(page1.x).toBeCloseTo(50, 1);
+    expect(page1.y).toBeCloseTo(70, 1);
+
+    // Page 2: 500x700 -> left: 25, right: 25, top: 140, bottom: 0
+    expect(page2.width).toBeCloseTo(450, 1);
+    expect(page2.height).toBeCloseTo(560, 1);
+    expect(page2.x).toBeCloseTo(25, 1);
+    expect(page2.y).toBeCloseTo(0, 1);
+  });
+
+  it('supports cropping mixed dimensions and portrait/landscape orientations', async () => {
+    const doc = await PDFDocument.create();
+    doc.addPage([500, 700]); // Portrait
+    doc.addPage([800, 400]); // Landscape
+    const mixedBytes = await doc.save();
+
+    const result = await cropPdfDocument(mixedBytes, {
+      pageCrops: {
+        1: { top: 10, bottom: 10, left: 10, right: 10 },
+        2: { top: 10, bottom: 10, left: 10, right: 10 },
+      },
+    });
+
+    const loaded = await PDFDocument.load(result.pdfBytes);
+    const p1Box = loaded.getPage(0).getMediaBox();
+    const p2Box = loaded.getPage(1).getMediaBox();
+
+    // P1: 500 - 100 = 400, 700 - 140 = 560
+    expect(p1Box.width).toBeCloseTo(400, 1);
+    expect(p1Box.height).toBeCloseTo(560, 1);
+
+    // P2: 800 - 160 = 640, 400 - 80 = 320
+    expect(p2Box.width).toBeCloseTo(640, 1);
+    expect(p2Box.height).toBeCloseTo(320, 1);
+  });
+
   it('throws error when crop margins exceed safe bounds', async () => {
     const sourceBytes = await createTestPdf(2);
     await expect(
       cropPdfDocument(sourceBytes, {
         margins: { top: 50, bottom: 50, left: 10, right: 10 },
+      }),
+    ).rejects.toThrow(PdfOperationError);
+  });
+
+  it('throws error when per-page crop margins on any page exceed safe bounds', async () => {
+    const sourceBytes = await createTestPdf(2);
+    await expect(
+      cropPdfDocument(sourceBytes, {
+        pageCrops: {
+          1: { top: 5, bottom: 5, left: 5, right: 5 },
+          2: { top: 50, bottom: 50, left: 5, right: 5 },
+        },
       }),
     ).rejects.toThrow(PdfOperationError);
   });
@@ -304,6 +368,7 @@ describe('Phase 12: Sign PDF Operation', () => {
 
     const result = await signPdfDocument(sourceBytes, {
       pageNumber: 2,
+      scope: 'page',
       signaturePngBytes: MINIMAL_1X1_PNG,
       placement: {
         xPercent: 60,
@@ -315,8 +380,39 @@ describe('Phase 12: Sign PDF Operation', () => {
     });
 
     expect(result.signedPageNumber).toBe(2);
+    expect(result.signedPageCount).toBe(1);
+    expect(result.signedPages).toEqual([2]);
     const doc = await PDFDocument.load(result.pdfBytes);
     expect(doc.getPageCount()).toBe(3);
+    expect(progressSpy).toHaveBeenCalled();
+  });
+
+  it('embeds signature PNG across all pages when scope is "all"', async () => {
+    // Create doc with 3 mixed dimension pages
+    const doc = await PDFDocument.create();
+    doc.addPage([500, 700]); // Portrait
+    doc.addPage([700, 500]); // Landscape
+    doc.addPage([600, 600]); // Square
+    const sourceBytes = await doc.save();
+
+    const progressSpy = vi.fn();
+
+    const result = await signPdfDocument(sourceBytes, {
+      scope: 'all',
+      signaturePngBytes: MINIMAL_1X1_PNG,
+      placement: {
+        xPercent: 65,
+        yPercent: 80,
+        widthPercent: 25,
+        heightPercent: 10,
+      },
+      onProgress: progressSpy,
+    });
+
+    expect(result.signedPageCount).toBe(3);
+    expect(result.signedPages).toEqual([1, 2, 3]);
+    const loadedDoc = await PDFDocument.load(result.pdfBytes);
+    expect(loadedDoc.getPageCount()).toBe(3);
     expect(progressSpy).toHaveBeenCalled();
   });
 

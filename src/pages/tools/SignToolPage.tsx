@@ -8,6 +8,8 @@ import {
   Info,
   RotateCcw,
   CheckCircle2,
+  Layers,
+  FileText,
 } from 'lucide-react';
 import { ROUTES } from '@/constants/routes';
 import { PDF_ONLY_CONFIG } from '@/constants/file';
@@ -38,15 +40,17 @@ const SIGN_CONFIG = {
 };
 
 type PlacementPreset = 'bottom-right' | 'bottom-left' | 'bottom-center' | 'center';
+type SignatureScope = 'page' | 'all';
 
 export const SignToolPage: FC = () => {
   useDocumentTitle(
     'Sign PDF',
-    'Draw and embed a visual signature stamp onto any page of your PDF document.',
+    'Draw and embed a visual signature stamp onto any page or all pages of your PDF document.',
   );
 
   const [pageCount, setPageCount] = useState<number | null>(null);
   const [targetPage, setTargetPage] = useState<number>(1);
+  const [scope, setScope] = useState<SignatureScope>('page');
   const [previewThumbnail, setPreviewThumbnail] = useState<string | null>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
   const [preset, setPreset] = useState<PlacementPreset>('bottom-right');
@@ -88,6 +92,7 @@ export const SignToolPage: FC = () => {
       setOutputResult(null);
       setOperationErrors([]);
       setTargetPage(1);
+      setScope('page');
       return;
     }
 
@@ -247,6 +252,7 @@ export const SignToolPage: FC = () => {
 
       const result = await signPdfDocument(activeFile.file, {
         pageNumber: targetPage,
+        scope,
         signaturePngBytes: pngBytes,
         placement,
         onProgress: (pct) => setProgressPercent(pct),
@@ -259,7 +265,10 @@ export const SignToolPage: FC = () => {
         defaultFilename,
         byteSize: result.pdfBytes.byteLength,
         pageCount: pageCount || 1,
-        label: `Signed Document (Page ${result.signedPageNumber})`,
+        label:
+          scope === 'all'
+            ? `Signed Document (All ${result.signedPageCount} pages)`
+            : `Signed Document (Page ${result.signedPageNumber})`,
       });
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Failed to apply signature.';
@@ -278,6 +287,7 @@ export const SignToolPage: FC = () => {
     setPreviewThumbnail(null);
     setHasDrawn(false);
     setTargetPage(1);
+    setScope('page');
     handleClearSignature();
   };
 
@@ -327,7 +337,7 @@ export const SignToolPage: FC = () => {
           </div>
 
           <p className="pt-4 text-sm sm:text-base text-muted-foreground leading-relaxed">
-            Draw your handwritten signature on an interactive pad and embed it visually into any page of your PDF document.
+            Draw your handwritten signature on an interactive pad and embed it visually into any page or all pages of your PDF document.
           </p>
         </div>
 
@@ -399,7 +409,7 @@ export const SignToolPage: FC = () => {
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-                  {/* Left Column: Signature Canvas */}
+                  {/* Left Column: Signature Canvas & Scope */}
                   <div className="lg:col-span-6 space-y-4">
                     <div className="flex items-center justify-between">
                       <label className="text-xs font-semibold uppercase tracking-wider text-foreground block">
@@ -437,9 +447,48 @@ export const SignToolPage: FC = () => {
                       )}
                     </div>
 
-                    {/* Target Page Selector */}
-                    {pageCount && pageCount > 1 && (
-                      <div className="space-y-1.5 pt-2">
+                    {/* Signature Scope Selector */}
+                    <div className="space-y-1.5 pt-2">
+                      <label className="text-xs font-semibold uppercase tracking-wider text-foreground block">
+                        Signature Scope
+                      </label>
+                      <div className="grid grid-cols-2 gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setScope('page')}
+                          className={`py-2 px-3 text-xs font-medium rounded-lg border transition-all text-center flex items-center justify-center gap-1.5 ${
+                            scope === 'page'
+                              ? 'bg-primary text-primary-foreground border-primary shadow-xs'
+                              : 'bg-background border-border text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                          }`}
+                        >
+                          <FileText className="w-3.5 h-3.5" />
+                          <span>This Page</span>
+                          {pageCount && pageCount > 1 && (
+                            <span className="text-[10px] opacity-80">(Page {targetPage})</span>
+                          )}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setScope('all')}
+                          className={`py-2 px-3 text-xs font-medium rounded-lg border transition-all text-center flex items-center justify-center gap-1.5 ${
+                            scope === 'all'
+                              ? 'bg-primary text-primary-foreground border-primary shadow-xs'
+                              : 'bg-background border-border text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                          }`}
+                        >
+                          <Layers className="w-3.5 h-3.5" />
+                          <span>All Pages</span>
+                          {pageCount && (
+                            <span className="text-[10px] opacity-80">({pageCount})</span>
+                          )}
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Target Page Selector (Active only when scope is 'page') */}
+                    {scope === 'page' && pageCount && pageCount > 1 && (
+                      <div className="space-y-1.5 pt-1">
                         <label htmlFor="sign-page-select" className="text-xs font-semibold uppercase tracking-wider text-foreground block">
                           Apply to Page
                         </label>
@@ -455,6 +504,12 @@ export const SignToolPage: FC = () => {
                             </option>
                           ))}
                         </select>
+                      </div>
+                    )}
+
+                    {scope === 'all' && pageCount && pageCount > 1 && (
+                      <div className="p-3 rounded-lg border border-border bg-secondary/30 text-xs text-muted-foreground">
+                        Signature will be embedded proportionally at this position across all <span className="font-semibold text-foreground">{pageCount} pages</span>.
                       </div>
                     )}
 
@@ -492,7 +547,9 @@ export const SignToolPage: FC = () => {
                   {/* Right Column: Page Placement Preview */}
                   <div className="lg:col-span-6 flex flex-col items-center justify-center p-6 rounded-xl border border-border bg-secondary/15 min-h-[320px]">
                     <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
-                      Page {targetPage} Placement Preview
+                      {scope === 'all'
+                        ? `Placement Preview (Page ${targetPage} Reference)`
+                        : `Page ${targetPage} Placement Preview`}
                     </div>
 
                     <div className="relative border border-border rounded shadow-md overflow-hidden max-w-[240px] bg-background">
@@ -522,7 +579,9 @@ export const SignToolPage: FC = () => {
                       </div>
                     </div>
                     <p className="text-[11px] text-muted-foreground mt-3 font-mono">
-                      Box indicates relative placement coordinates
+                      {scope === 'all'
+                        ? 'Position is proportionally mapped across all pages'
+                        : 'Box indicates relative placement coordinates'}
                     </p>
                   </div>
                 </div>
@@ -532,7 +591,11 @@ export const SignToolPage: FC = () => {
                   <div className="text-xs text-muted-foreground">
                     <span className="text-emerald-600 dark:text-emerald-400 font-medium flex items-center gap-1.5">
                       <CheckCircle2 className="w-4 h-4 inline" aria-hidden="true" />
-                      {hasDrawn ? `Signature ready to embed onto page ${targetPage}.` : 'Please draw your signature above.'}
+                      {hasDrawn
+                        ? scope === 'all'
+                          ? `Signature ready to embed across all ${pageCount} pages.`
+                          : `Signature ready to embed onto page ${targetPage}.`
+                        : 'Please draw your signature above.'}
                     </span>
                   </div>
 
@@ -542,7 +605,11 @@ export const SignToolPage: FC = () => {
                     onClick={handleApplySignature}
                     className="w-full sm:w-auto shadow-sm"
                   >
-                    <span>Sign Document</span>
+                    <span>
+                      {scope === 'all'
+                        ? `Sign All ${pageCount} Pages`
+                        : `Sign Document (Page ${targetPage})`}
+                    </span>
                     <ArrowRight className="w-4 h-4 ml-2" aria-hidden="true" />
                   </Button>
                 </div>
@@ -589,4 +656,3 @@ export const SignToolPage: FC = () => {
     </div>
   );
 };
-

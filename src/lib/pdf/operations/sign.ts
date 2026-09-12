@@ -9,7 +9,8 @@ export interface SignaturePlacement {
 }
 
 export interface SignPdfOptions {
-  pageNumber: number; // 1-based page
+  pageNumber?: number; // 1-based page (used when scope is 'page', defaults to 1)
+  scope?: 'page' | 'all'; // 'page' (default) or 'all'
   signaturePngBytes: Uint8Array;
   placement: SignaturePlacement;
   onProgress?: (progressPercent: number) => void;
@@ -17,18 +18,21 @@ export interface SignPdfOptions {
 
 export interface SignPdfResult {
   pdfBytes: Uint8Array;
-  signedPageNumber: number;
+  signedPageNumber: number; // Retained for backwards compatibility
+  signedPages: number[];
+  signedPageCount: number;
 }
 
 /**
- * Embeds a visual signature graphic into a designated page of a PDF document.
- * Translates viewport coordinates to PDF page geometry.
+ * Embeds a visual signature graphic into a single page or across all pages of a PDF document.
+ * Translates viewport coordinates to PDF page geometry proportionally, preserving bounds
+ * and aspect across mixed page orientations (portrait, landscape) and varying page dimensions.
  */
 export async function signPdfDocument(
   input: File | Uint8Array,
   options: SignPdfOptions,
 ): Promise<SignPdfResult> {
-  const { pageNumber, signaturePngBytes, placement, onProgress } = options;
+  const { pageNumber, scope = 'page', signaturePngBytes, placement, onProgress } = options;
 
   if (!signaturePngBytes || signaturePngBytes.byteLength === 0) {
     throw new PdfOperationError('PROCESSING_FAILED', 'Signature image data is missing or empty.');
@@ -52,11 +56,18 @@ export async function signPdfDocument(
   }
 
   const totalPages = doc.getPageCount();
-  if (pageNumber < 1 || pageNumber > totalPages) {
-    throw new PdfOperationError(
-      'OUT_OF_BOUNDS_PAGE',
-      `Target page ${pageNumber} is outside the document bounds (1-${totalPages}).`,
-    );
+  if (totalPages === 0) {
+    throw new PdfOperationError('INVALID_PDF', 'The source document contains no pages.');
+  }
+
+  if (scope === 'page') {
+    const targetPage = pageNumber ?? 1;
+    if (targetPage < 1 || targetPage > totalPages) {
+      throw new PdfOperationError(
+        'OUT_OF_BOUNDS_PAGE',
+        `Target page ${targetPage} is outside the document bounds (1-${totalPages}).`,
+      );
+    }
   }
 
   onProgress?.(25);
@@ -71,33 +82,43 @@ export async function signPdfDocument(
 
   onProgress?.(50);
 
-  const page = doc.getPage(pageNumber - 1);
-  const { width: pageWidth, height: pageHeight } = page.getSize();
+  const targetPages = scope === 'all'
+    ? Array.from({ length: totalPages }, (_, i) => i + 1)
+    : [pageNumber ?? 1];
 
-  // Convert top-left percentage coordinates to PDF bottom-left points
-  const sigWidth = Math.max(20, (placement.widthPercent / 100) * pageWidth);
-  const sigHeight = Math.max(10, (placement.heightPercent / 100) * pageHeight);
+  for (let i = 0; i < targetPages.length; i++) {
+    const pNum = targetPages[i];
+    const page = doc.getPage(pNum - 1);
+    const { width: pageWidth, height: pageHeight } = page.getSize();
 
-  const clampedXPercent = Math.max(0, Math.min(100 - placement.widthPercent, placement.xPercent));
-  const clampedYPercent = Math.max(0, Math.min(100 - placement.heightPercent, placement.yPercent));
+    // Convert relative viewport percentages to this page's PDF bottom-left coordinate space
+    const sigWidth = Math.max(20, (placement.widthPercent / 100) * pageWidth);
+    const sigHeight = Math.max(10, (placement.heightPercent / 100) * pageHeight);
 
-  const pdfX = (clampedXPercent / 100) * pageWidth;
-  const pdfY = ((100 - (clampedYPercent + placement.heightPercent)) / 100) * pageHeight;
+    const clampedXPercent = Math.max(0, Math.min(100 - placement.widthPercent, placement.xPercent));
+    const clampedYPercent = Math.max(0, Math.min(100 - placement.heightPercent, placement.yPercent));
 
-  page.drawImage(pngImage, {
-    x: pdfX,
-    y: Math.max(0, pdfY),
-    width: sigWidth,
-    height: sigHeight,
-  });
+    const pdfX = (clampedXPercent / 100) * pageWidth;
+    const pdfY = ((100 - (clampedYPercent + placement.heightPercent)) / 100) * pageHeight;
 
-  onProgress?.(80);
+    page.drawImage(pngImage, {
+      x: pdfX,
+      y: Math.max(0, pdfY),
+      width: sigWidth,
+      height: sigHeight,
+    });
+
+    onProgress?.(50 + Math.round(((i + 1) / targetPages.length) * 40));
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  }
 
   const pdfBytes = await doc.save();
   onProgress?.(100);
 
   return {
     pdfBytes,
-    signedPageNumber: pageNumber,
+    signedPageNumber: targetPages[0],
+    signedPages: targetPages,
+    signedPageCount: targetPages.length,
   };
 }

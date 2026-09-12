@@ -14,35 +14,18 @@ export interface ConvertPdfToMarkdownResult {
   charCount: number;
 }
 
-// Global Safari compatibility polyfill for ReadableStream async iteration
-if (typeof ReadableStream !== 'undefined' && !(Symbol.asyncIterator in ReadableStream.prototype)) {
-  (ReadableStream.prototype as unknown as Record<symbol, unknown>)[Symbol.asyncIterator] = function (this: ReadableStream<unknown>) {
-    const reader = this.getReader();
-    return {
-      async next() {
-        const { done, value } = await reader.read();
-        if (done) {
-          reader.releaseLock();
-          return { done: true, value: undefined };
-        }
-        return { done: false, value };
-      },
-      async return() {
-        reader.releaseLock();
-        return { done: true, value: undefined };
-      },
-      [Symbol.asyncIterator]() {
-        return this;
-      },
-    };
-  };
-}
-
 const SUPERSCRIPT_MAP: Record<string, string> = {
   '0': '⁰', '1': '¹', '2': '²', '3': '³', '4': '⁴',
   '5': '⁵', '6': '⁶', '7': '⁷', '8': '⁸', '9': '⁹',
   '+': '⁺', '-': '⁻', '=': '⁼', '(': '⁽', ')': '⁾',
   'n': 'ⁿ', 'i': 'ⁱ', 'x': 'ˣ',
+};
+
+const SUBSCRIPT_MAP: Record<string, string> = {
+  '0': '₀', '1': '₁', '2': '₂', '3': '₃', '4': '₄',
+  '5': '₅', '6': '₆', '7': '₇', '8': '₈', '9': '₉',
+  '+': '₊', '-': '₋', '=': '₌', '(': '₍', ')': '₎',
+  'a': 'ₐ', 'e': 'ₑ', 'i': 'ᵢ', 'o': 'ₒ', 'x': 'ₓ',
 };
 
 const CMSY_CHAR_MAP: Record<number, string> = {
@@ -66,14 +49,26 @@ const CMR_LIGATURE_MAP: Record<number, string> = {
   124: '—', // em-dash
 };
 
+interface PositionedItem {
+  str: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  fontName: string;
+}
+
 interface DecodedChunk {
   font: string;
   size: number;
   text: string;
+  x?: number;
+  y?: number;
+  width?: number;
 }
 
 interface StreamTextChunk {
-  items?: Array<{ str?: string; fontName?: string; height?: number }>;
+  items?: Array<{ str?: string; transform?: number[]; width?: number; height?: number; fontName?: string }>;
   styles?: Record<string, unknown>;
 }
 
@@ -84,8 +79,8 @@ interface PageProxyLike {
       releaseLock: () => void;
     };
   };
-  getTextContent: (params: { includeMarkedContent: boolean; disableNormalization: boolean }) => Promise<{
-    items: Array<{ str?: string; fontName?: string; height?: number }>;
+  getTextContent?: (params: { includeMarkedContent: boolean; disableNormalization: boolean }) => Promise<{
+    items: Array<{ str?: string; transform?: number[]; width?: number; height?: number; fontName?: string }>;
     styles: Record<string, unknown>;
   }>;
   commonObjs?: {
@@ -101,42 +96,72 @@ interface OperatorListLike {
   argsArray: unknown[][];
 }
 
+interface GeometricLine {
+  y: number;
+  items: PositionedItem[];
+}
+
 /**
- * Safely extracts text items and styles across all browsers (including Safari versions lacking Symbol.asyncIterator).
+ * Safely extracts positioned text items across all browsers (including Safari versions lacking Symbol.asyncIterator).
+ * Strictly consumes the stream via .getReader() and never invokes for-await or methods that trigger it.
  */
-async function extractPageTextContent(page: PageProxyLike): Promise<{
-  items: Array<{ str?: string; fontName?: string; height?: number }>;
-  styles: Record<string, unknown>;
-}> {
+async function extractPageItemsSafely(page: PageProxyLike): Promise<PositionedItem[]> {
+  const items: PositionedItem[] = [];
+
   if (typeof page.streamTextContent === 'function') {
     const stream = page.streamTextContent({ includeMarkedContent: false, disableNormalization: false });
     const reader = stream.getReader();
-    const items: Array<{ str?: string; fontName?: string; height?: number }> = [];
-    let styles: Record<string, unknown> = {};
     try {
       while (true) {
         const { value, done } = await reader.read();
         if (done) break;
-        if (value) {
-          if (Array.isArray(value.items)) {
-            items.push(...value.items);
-          }
-          if (value.styles) {
-            styles = { ...styles, ...value.styles };
+        if (value && Array.isArray(value.items)) {
+          for (const raw of value.items) {
+            if (raw && typeof raw.str === 'string' && raw.str.trim().length > 0 && raw.transform) {
+              items.push({
+                str: raw.str.trim(),
+                x: raw.transform[4] || 0,
+                y: raw.transform[5] || 0,
+                width: raw.width || 0,
+                height: Math.abs(raw.transform[0]) || raw.height || 10,
+                fontName: raw.fontName || '',
+              });
+            }
           }
         }
       }
-      return { items, styles };
+      return items;
     } finally {
       reader.releaseLock();
     }
   }
 
-  return await page.getTextContent({ includeMarkedContent: false, disableNormalization: false });
+  // Fallback for mocked test environments without streamTextContent
+  if (typeof page.getTextContent === 'function') {
+    try {
+      const textContent = await page.getTextContent({ includeMarkedContent: false, disableNormalization: false });
+      for (const raw of textContent.items) {
+        if (raw && typeof raw.str === 'string' && raw.transform) {
+          items.push({
+            str: raw.str,
+            x: raw.transform[4] || 0,
+            y: raw.transform[5] || 0,
+            width: raw.width || 0,
+            height: Math.abs(raw.transform[0]) || raw.height || 10,
+            fontName: raw.fontName || '',
+          });
+        }
+      }
+    } catch {
+      // Ignore if getTextContent fails
+    }
+  }
+
+  return items;
 }
 
 /**
- * Reconstructs rich text chunks from operator list, accurately decoding Computer Modern / TeX math glyphs and ligatures.
+ * Reconstructs rich text chunks from operator list, decoding Computer Modern math glyphs and ligatures.
  */
 function decodeChunksFromOpList(page: PageProxyLike, opList: OperatorListLike, ops: Record<string, number>): DecodedChunk[] {
   let curFont = '';
@@ -186,6 +211,95 @@ function decodeChunksFromOpList(page: PageProxyLike, opList: OperatorListLike, o
 }
 
 /**
+ * Detects multi-column tables purely using positional geometry.
+ * Identifies groups of consecutive lines sharing consistent vertical pitch and horizontal column boundaries.
+ */
+function detectGeometricTable(lines: GeometricLine[]): { tableMarkdown: string; firstCellText: string } | null {
+  // Candidate table rows have multiple short items (table cells, not narrative paragraphs)
+  const candidateIndices: number[] = [];
+  for (let i = 0; i < lines.length; i++) {
+    const l = lines[i];
+    if (l.items.length >= 3 && l.items.every((it) => it.str.trim().length < 35)) {
+      const first = l.items[0].str.trim();
+      if (/^\([a-z0-9ivx]+\)$/i.test(first) && l.items.length <= 3) {
+        continue;
+      }
+      candidateIndices.push(i);
+    }
+  }
+
+  const clusters: number[][] = [];
+  let curCluster: number[] = [];
+  for (let i = 0; i < candidateIndices.length; i++) {
+    const idx = candidateIndices[i];
+    if (curCluster.length === 0) {
+      curCluster.push(idx);
+    } else {
+      const prevIdx = curCluster[curCluster.length - 1];
+      const prevL = lines[prevIdx];
+      const curL = lines[idx];
+      const dy = prevL.y - curL.y;
+      if (idx === prevIdx + 1 && dy >= 10 && dy <= 25) {
+        curCluster.push(idx);
+      } else {
+        if (curCluster.length >= 3) clusters.push(curCluster);
+        curCluster = [idx];
+      }
+    }
+  }
+  if (curCluster.length >= 3) clusters.push(curCluster);
+
+  if (clusters.length === 0) return null;
+
+  const bestCluster = clusters.reduce((max, c) => (c.length > max.length ? c : max), clusters[0]);
+  const tableLines = bestCluster.map((idx) => lines[idx]);
+
+  const bestRow = tableLines.reduce((max, l) => (l.items.length > max.items.length ? l : max), tableLines[0]);
+  const sortedItems = [...bestRow.items].sort((a, b) => a.x - b.x);
+  const colSplits: number[] = [];
+  for (let i = 0; i < sortedItems.length - 1; i++) {
+    const curEnd = sortedItems[i].x + (sortedItems[i].width || 15);
+    const nextStart = sortedItems[i + 1].x;
+    colSplits.push((curEnd + nextStart) / 2);
+  }
+
+  const numCols = colSplits.length + 1;
+  const getColIndex = (x: number): number => {
+    for (let c = 0; c < colSplits.length; c++) {
+      if (x < colSplits[c]) return c;
+    }
+    return colSplits.length;
+  };
+
+  const rows: string[][] = [];
+  for (const line of tableLines) {
+    const row = new Array<string>(numCols).fill('');
+    for (const it of line.items) {
+      const c = getColIndex(it.x);
+      row[c] = row[c] ? `${row[c]} ${it.str.trim()}` : it.str.trim();
+    }
+    rows.push(row);
+  }
+
+  const formatRow = (cells: string[]) => {
+    return '|' + cells.map((c) => (c.trim() ? ` ${c.trim()} ` : ' ')).join('|') + '|';
+  };
+
+  const header = rows[0];
+  const separator = new Array<string>(numCols).fill('---');
+  const mdRows = [
+    formatRow(header),
+    '|' + separator.join('|') + '|',
+    ...rows.slice(1).map((r) => formatRow(r)),
+  ];
+
+  return {
+    tableMarkdown: '\n' + mdRows.join('\n') + '\n',
+    firstCellText: tableLines[0].items[0].str.trim(),
+  };
+}
+
+/**
  * Pre-processes chunks: handles superscripts, inline math equations, and Excel cell references.
  */
 function preProcessChunks(chunks: DecodedChunk[]): DecodedChunk[] {
@@ -198,6 +312,12 @@ function preProcessChunks(chunks: DecodedChunk[]): DecodedChunk[] {
     // Superscripts detection: character font size is significantly smaller than preceding text
     if (prev && c.size < prev.size * 0.85 && SUPERSCRIPT_MAP[c.text.trim()]) {
       prev.text = prev.text.trimEnd() + SUPERSCRIPT_MAP[c.text.trim()];
+      continue;
+    }
+
+    // Subscripts detection
+    if (prev && c.size < prev.size * 0.85 && SUBSCRIPT_MAP[c.text.trim()]) {
+      prev.text = prev.text.trimEnd() + SUBSCRIPT_MAP[c.text.trim()];
       continue;
     }
 
@@ -228,13 +348,13 @@ function preProcessChunks(chunks: DecodedChunk[]): DecodedChunk[] {
       continue;
     }
 
-    // Question marks indicator: [2], [3]
-    if (/^\[\d+\]$/.test(c.text.trim()) && prev && !prev.text.includes('\n\n')) {
+    // Question marks indicator: [2], [3], [10 Marks]
+    if (/^\[\s*(?:\d+(?:\s*[×x*]\s*\d+(?:\s*=\s*\d+)?)?|\d+\s*marks?)\s*\]$/i.test(c.text.trim()) && prev && !prev.text.includes('\n\n')) {
       prev.text = prev.text.trimEnd() + ' ' + c.text.trim();
       continue;
     }
 
-    // Inline math tokens: d = b² − 4ac
+    // Mathematical formula tokens: d = b² − 4ac
     if (
       prev &&
       (prev.text.trim() === '(i)' ||
@@ -283,11 +403,14 @@ function preProcessChunks(chunks: DecodedChunk[]): DecodedChunk[] {
 
 /**
  * Reconstructs semantic Markdown lines from decoded chunks on a page.
+ * Uses general structural heuristics: font sizes for headings, geometric tables, and list patterns.
  */
 function reconstructPageMarkdown(
   pageIndex: number,
   rawChunks: DecodedChunk[],
   repeatedHeaders: Set<string>,
+  pageGeometricLines: GeometricLine[],
+  medianFontSize: number,
 ): string {
   let chunks = rawChunks.slice();
 
@@ -298,71 +421,67 @@ function reconstructPageMarkdown(
     }
   }
 
-  // Suppress footer page number markers (e.g. Page 1, Page 2)
-  if (chunks.length > 0 && /^Page\s+\d+(\s+of\s+\d+)?$/i.test(chunks[chunks.length - 1].text.trim())) {
+  // Suppress footer page number markers (e.g. Page 1, Page 2 of 3)
+  if (
+    chunks.length > 0 &&
+    /^(?:page\s+)?(?:\d+|[ivx]+)(?:\s*(?:of|\/)\s*\d+)?$/i.test(chunks[chunks.length - 1].text.trim())
+  ) {
     chunks = chunks.slice(0, chunks.length - 1);
   }
+
+  // Check if this page contains a geometric table
+  const tableResult = detectGeometricTable(pageGeometricLines);
 
   const merged = preProcessChunks(chunks);
   const lines: string[] = [];
   let i = 0;
+  let tableInserted = false;
 
   while (i < merged.length) {
     const t = merged[i].text.trim();
+    const size = merged[i].size || 10;
 
-    // Table detection: Spreadsheet table columns A, B, C, D followed by rows 1, 2, 3, 4
+    // Table injection if table lines match current text position
     if (
-      i + 4 < merged.length &&
-      merged[i].text.trim() === 'A' &&
-      merged[i + 1].text.trim() === 'B' &&
-      merged[i + 2].text.trim() === 'C' &&
-      merged[i + 3].text.trim() === 'D'
+      tableResult &&
+      !tableInserted &&
+      t === tableResult.firstCellText &&
+      i + 3 < merged.length
     ) {
-      lines.push('\n| | A | B | C | D |');
-      lines.push('|---|---|---|---|---|');
-      i += 4;
-      let expectedRow = 1;
-      let curRow: string[] | null = null;
-      while (i < merged.length) {
-        const item = merged[i].text.trim();
-        if (item === String(expectedRow)) {
-          if (curRow) {
-            while (curRow.length < 5) curRow.push('');
-            lines.push(`| ${curRow.join(' | ')} |`);
-          }
-          curRow = [item];
-          expectedRow++;
-          i++;
-        } else if (item.startsWith('Write') || item.startsWith('Question') || item.startsWith('(')) {
-          if (curRow) {
-            while (curRow.length < 5) curRow.push('');
-            lines.push(`| ${curRow.join(' | ')} |`);
-          }
-          break;
-        } else {
-          if (curRow) curRow.push(item);
-          i++;
-        }
+      lines.push(tableResult.tableMarkdown);
+      tableInserted = true;
+      // Skip chunks that were incorporated into the table
+      while (
+        i < merged.length &&
+        !merged[i].text.startsWith('Write') &&
+        !merged[i].text.startsWith('Question') &&
+        !merged[i].text.startsWith('SECTION') &&
+        !merged[i].text.startsWith('(')
+      ) {
+        i++;
       }
-      lines.push('');
       continue;
     }
 
-    // Headings & Structural Blocks
-    if (pageIndex === 0 && (t === 'COMPUTER STUDIES' || t === 'CLASS VIII')) {
+    // Document Title: Large text at the top of Page 1
+    if (pageIndex === 0 && i < 4 && size >= medianFontSize * 1.25 && t.length < 80) {
       lines.push(`# ${t}\n`);
-    } else if (/^SECTION\s+[A-Z]\b/i.test(t)) {
+    } else if (/^(?:SECTION|CHAPTER|PART|UNIT)\s+[A-Z0-9()]/i.test(t)) {
       lines.push(`\n## ${t}\n`);
-    } else if (/^Question\s+\d+\b/i.test(t)) {
+    } else if (/^(?:Question|Exercise|Problem|Task)\s+\d+\b/i.test(t)) {
+      lines.push(`\n### ${t}\n`);
+    } else if (size >= medianFontSize * 1.4 && t.length < 60) {
+      lines.push(`\n## ${t}\n`);
+    } else if (size >= medianFontSize * 1.2 && t.length < 50 && !t.startsWith('(')) {
       lines.push(`\n### ${t}\n`);
     } else if (t.startsWith('•')) {
       lines.push(`- ${t.replace(/^•\s*/, '')}`);
-    } else if (/^\([a-z]\)/.test(t)) {
+    } else if (/^\([a-z]\)/i.test(t)) {
       // Question part e.g. (a) with question text
       let fullPart = t;
       if (
         i + 1 < merged.length &&
-        !/^\([a-z0-9ivx]+\)/.test(merged[i + 1].text.trim()) &&
+        !/^\([a-z0-9ivx]+\)/i.test(merged[i + 1].text.trim()) &&
         !merged[i + 1].text.startsWith('Question') &&
         !merged[i + 1].text.startsWith('SECTION')
       ) {
@@ -376,7 +495,7 @@ function reconstructPageMarkdown(
       for (const part of parts) {
         lines.push(`  - ${part}`);
       }
-    } else if (/^\([i|v|x]+\)/.test(t)) {
+    } else if (/^\([ivx]+\)/i.test(t)) {
       lines.push(`  - ${t}`);
     } else {
       lines.push(t);
@@ -389,7 +508,7 @@ function reconstructPageMarkdown(
 
 /**
  * Extracts text from a PDF document and compiles it into structured, high-fidelity Markdown.
- * Deterministically reconstructs semantic headings, tables, mathematical formulas, ligatures, and lists.
+ * Purely client-side and deterministic without modifying global browser prototypes.
  */
 export async function convertPdfToMarkdown(
   fileOrBytes: File | Uint8Array,
@@ -426,9 +545,11 @@ export async function convertPdfToMarkdown(
 
   const ops = ((pdfjs as unknown as Record<string, unknown>).OPS || {}) as Record<string, number>;
   const allPageChunks: DecodedChunk[][] = [];
+  const allPageGeometricLines: GeometricLine[][] = [];
+  const allFontSizes: number[] = [];
 
   try {
-    // Pass 1: Decode all page chunks
+    // Pass 1: Decode all page chunks and extract geometric positioned lines
     for (let pageNum = 1; pageNum <= totalPages; pageNum++) {
       const page = (await doc.getPage(pageNum)) as unknown as PageProxyLike;
       let pageChunks: DecodedChunk[] = [];
@@ -441,20 +562,45 @@ export async function convertPdfToMarkdown(
           throw new Error('Operator list unavailable');
         }
       } catch {
-        // Fallback to textContent extraction if operator list fails
-        const textContent = await extractPageTextContent(page);
-        for (const item of textContent.items) {
-          if ('str' in item && typeof item.str === 'string' && item.str.trim()) {
+        // Fallback: extract positioned items via streamTextContent
+        const safeItems = await extractPageItemsSafely(page);
+        for (const item of safeItems) {
+          if (item.str.trim()) {
             pageChunks.push({
               font: item.fontName || '',
               size: item.height || 10,
               text: item.str,
+              x: item.x,
+              y: item.y,
+              width: item.width,
             });
           }
         }
       }
 
+      // Extract geometric lines for table detection
+      const pageItems = await extractPageItemsSafely(page);
+      pageItems.sort((a, b) => (Math.abs(b.y - a.y) > 3 ? b.y - a.y : a.x - b.x));
+      const lines: GeometricLine[] = [];
+      let curLine: PositionedItem[] = [];
+      let curY: number | null = null;
+      for (const it of pageItems) {
+        if (it.str.trim()) {
+          allFontSizes.push(it.height);
+        }
+        if (curY === null || Math.abs(curY - it.y) <= 4) {
+          curLine.push(it);
+          curY = it.y;
+        } else {
+          if (curLine.length > 0) lines.push({ y: curY, items: curLine });
+          curLine = [it];
+          curY = it.y;
+        }
+      }
+      if (curLine.length > 0 && curY !== null) lines.push({ y: curY, items: curLine });
+
       allPageChunks.push(pageChunks);
+      allPageGeometricLines.push(lines);
       page.cleanup();
 
       const pct = Math.round((pageNum / totalPages) * 50);
@@ -462,16 +608,19 @@ export async function convertPdfToMarkdown(
       await new Promise((resolve) => setTimeout(resolve, 0));
     }
 
-    // Identify repeated headers across pages
+    // Compute median font size for document hierarchy detection
+    allFontSizes.sort((a, b) => a - b);
+    const medianFontSize = allFontSizes[Math.floor(allFontSizes.length / 2)] || 10;
+
+    // Identify repeated headers across pages (general heuristic)
     const repeatedHeaders = new Set<string>();
     if (allPageChunks.length >= 2 && allPageChunks[0].length >= 2) {
-      const topFirstPageChunks = allPageChunks[0].slice(0, 3).map((c) => c.text.trim());
+      const topFirstPageChunks = allPageChunks[0].slice(0, 4).map((c) => c.text.trim()).filter((t) => t.length >= 3 && t.length <= 100);
       for (const candidate of topFirstPageChunks) {
-        if (!candidate || candidate.length > 50) continue;
         let matchCount = 0;
         for (let p = 1; p < allPageChunks.length; p++) {
-          const topChunks = allPageChunks[p].slice(0, 3).map((c) => c.text.trim());
-          if (topChunks.includes(candidate)) {
+          const topSubsequent = allPageChunks[p].slice(0, 4).map((c) => c.text.trim());
+          if (topSubsequent.includes(candidate)) {
             matchCount++;
           }
         }
@@ -487,7 +636,13 @@ export async function convertPdfToMarkdown(
 
     for (let p = 0; p < allPageChunks.length; p++) {
       const pageNum = p + 1;
-      let pageText = reconstructPageMarkdown(p, allPageChunks[p], repeatedHeaders);
+      let pageText = reconstructPageMarkdown(
+        p,
+        allPageChunks[p],
+        repeatedHeaders,
+        allPageGeometricLines[p],
+        medianFontSize,
+      );
 
       if (!pageText) {
         pageText = `*(Page ${pageNum} contains no extractable text or consists of scanned imagery)*`;

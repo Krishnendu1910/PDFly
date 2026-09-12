@@ -8,6 +8,9 @@ import {
   Zap,
   CheckCircle2,
   Maximize2,
+  ChevronLeft,
+  ChevronRight,
+  Copy,
 } from 'lucide-react';
 import { ROUTES } from '@/constants/routes';
 import { PDF_ONLY_CONFIG } from '@/constants/file';
@@ -37,6 +40,13 @@ const CROP_CONFIG = {
   minFiles: 1,
 };
 
+const DEFAULT_MARGIN: CropMarginsPercent = {
+  top: 5,
+  bottom: 5,
+  left: 5,
+  right: 5,
+};
+
 export const CropToolPage: FC = () => {
   useDocumentTitle(
     'Crop PDF',
@@ -44,18 +54,15 @@ export const CropToolPage: FC = () => {
   );
 
   const [pageCount, setPageCount] = useState<number | null>(null);
-  const [previewThumbnail, setPreviewThumbnail] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [thumbnails, setThumbnails] = useState<Record<number, string>>({});
   const [previewLoading, setPreviewLoading] = useState(false);
-  const [margins, setMargins] = useState<CropMarginsPercent>({
-    top: 5,
-    bottom: 5,
-    left: 5,
-    right: 5,
-  });
+  const [pageCrops, setPageCrops] = useState<Record<number, CropMarginsPercent>>({});
   const [isProcessing, setIsProcessing] = useState(false);
   const [progressPercent, setProgressPercent] = useState(0);
   const [operationErrors, setOperationErrors] = useState<FileValidationError[]>([]);
   const [outputResult, setOutputResult] = useState<OutputFileItem | null>(null);
+  const [appliedAllNotice, setAppliedAllNotice] = useState(false);
 
   const {
     files,
@@ -70,20 +77,32 @@ export const CropToolPage: FC = () => {
 
   const activeFile = files[0];
 
+  // Inspect page count upon file selection
   useEffect(() => {
     let isCancelled = false;
 
     if (!activeFile) {
       setPageCount(null);
-      setPreviewThumbnail(null);
+      setCurrentPage(1);
+      setThumbnails({});
+      setPageCrops({});
       setOutputResult(null);
       setOperationErrors([]);
+      setAppliedAllNotice(false);
       return;
     }
 
     getPdfPageCount(activeFile.file)
       .then((count) => {
-        if (!isCancelled) setPageCount(count);
+        if (!isCancelled) {
+          setPageCount(count);
+          setCurrentPage(1);
+          const initial: Record<number, CropMarginsPercent> = {};
+          for (let p = 1; p <= count; p++) {
+            initial[p] = { ...DEFAULT_MARGIN };
+          }
+          setPageCrops(initial);
+        }
       })
       .catch((err: unknown) => {
         if (!isCancelled) {
@@ -93,13 +112,29 @@ export const CropToolPage: FC = () => {
         }
       });
 
+    return () => {
+      isCancelled = true;
+    };
+  }, [activeFile]);
+
+  // Render preview thumbnail for the currently selected page
+  useEffect(() => {
+    let isCancelled = false;
+    if (!activeFile || !currentPage) return;
+
+    if (thumbnails[currentPage]) {
+      return;
+    }
+
     setPreviewLoading(true);
-    renderPageThumbnail(activeFile.file, 1, { targetWidth: 400 })
+    renderPageThumbnail(activeFile.file, currentPage, { targetWidth: 400 })
       .then((dataUrl) => {
-        if (!isCancelled) setPreviewThumbnail(dataUrl);
+        if (!isCancelled) {
+          setThumbnails((prev) => ({ ...prev, [currentPage]: dataUrl }));
+        }
       })
       .catch(() => {
-        // Non-critical fallback if preview fails
+        // Non-critical fallback if preview generation fails
       })
       .finally(() => {
         if (!isCancelled) setPreviewLoading(false);
@@ -108,28 +143,65 @@ export const CropToolPage: FC = () => {
     return () => {
       isCancelled = true;
     };
-  }, [activeFile]);
+  }, [activeFile, currentPage, thumbnails]);
 
   const allErrors = [...pipelineErrors, ...operationErrors];
 
+  const currentCrop = pageCrops[currentPage] || DEFAULT_MARGIN;
+
   const updateMargin = (side: keyof CropMarginsPercent, val: number) => {
-    setMargins((prev) => ({
+    setAppliedAllNotice(false);
+    const clamped = Math.max(0, Math.min(40, val));
+    setPageCrops((prev) => ({
       ...prev,
-      [side]: Math.max(0, Math.min(40, val)),
+      [currentPage]: {
+        ...(prev[currentPage] || DEFAULT_MARGIN),
+        [side]: clamped,
+      },
     }));
   };
 
-  const handleApplyCrop = async () => {
-    if (!activeFile || isProcessing) return;
+  const setPageMarginUniform = (marginVal: number) => {
+    setAppliedAllNotice(false);
+    const clamped = Math.max(0, Math.min(40, marginVal));
+    setPageCrops((prev) => ({
+      ...prev,
+      [currentPage]: {
+        top: clamped,
+        bottom: clamped,
+        left: clamped,
+        right: clamped,
+      },
+    }));
+  };
 
-    if (margins.left + margins.right >= 90 || margins.top + margins.bottom >= 90) {
-      setOperationErrors([
-        {
-          code: 'UNKNOWN_ERROR',
-          message: 'Combined margins exceed 90%. Please reduce crop margins.',
-        },
-      ]);
-      return;
+  const handleApplyToAllPages = () => {
+    if (!pageCount) return;
+    const sourceCrop = pageCrops[currentPage] || DEFAULT_MARGIN;
+    const updated: Record<number, CropMarginsPercent> = {};
+    for (let p = 1; p <= pageCount; p++) {
+      updated[p] = { ...sourceCrop };
+    }
+    setPageCrops(updated);
+    setAppliedAllNotice(true);
+    setTimeout(() => setAppliedAllNotice(false), 4000);
+  };
+
+  const handleApplyCrop = async () => {
+    if (!activeFile || isProcessing || !pageCount) return;
+
+    // Validate per-page margins
+    for (let p = 1; p <= pageCount; p++) {
+      const c = pageCrops[p] || DEFAULT_MARGIN;
+      if (c.left + c.right >= 90 || c.top + c.bottom >= 90) {
+        setOperationErrors([
+          {
+            code: 'UNKNOWN_ERROR',
+            message: `Combined crop margins on page ${p} exceed 90%. Please reduce margins.`,
+          },
+        ]);
+        return;
+      }
     }
 
     setIsProcessing(true);
@@ -138,7 +210,7 @@ export const CropToolPage: FC = () => {
 
     try {
       const result = await cropPdfDocument(activeFile.file, {
-        margins,
+        pageCrops,
         onProgress: (pct) => setProgressPercent(pct),
       });
 
@@ -165,8 +237,22 @@ export const CropToolPage: FC = () => {
     setOutputResult(null);
     clearFiles();
     setPageCount(null);
-    setPreviewThumbnail(null);
-    setMargins({ top: 5, bottom: 5, left: 5, right: 5 });
+    setCurrentPage(1);
+    setThumbnails({});
+    setPageCrops({});
+    setAppliedAllNotice(false);
+  };
+
+  // Inspect whether all pages have identical crop margins
+  const hasUniformCrop = (): boolean => {
+    if (!pageCount || pageCount <= 1) return true;
+    const base = JSON.stringify(pageCrops[1] || DEFAULT_MARGIN);
+    for (let p = 2; p <= pageCount; p++) {
+      if (JSON.stringify(pageCrops[p] || DEFAULT_MARGIN) !== base) {
+        return false;
+      }
+    }
+    return true;
   };
 
   return (
@@ -213,7 +299,7 @@ export const CropToolPage: FC = () => {
           </div>
 
           <p className="pt-4 text-sm sm:text-base text-muted-foreground leading-relaxed">
-            Trim unnecessary borders, adjust page framing, and remove unwanted white margins across all document pages in private local memory.
+            Trim unnecessary borders, adjust framing, and set page-specific crop margins in private local memory.
           </p>
         </div>
 
@@ -276,24 +362,91 @@ export const CropToolPage: FC = () => {
                   </Button>
                 </div>
 
+                {/* Multi-Page Navigation Bar */}
+                {pageCount && pageCount > 1 && (
+                  <div className="flex flex-wrap items-center justify-between gap-3 p-3 rounded-xl border border-border bg-secondary/30">
+                    <div className="flex items-center gap-2">
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        size="sm"
+                        disabled={currentPage <= 1 || isProcessing}
+                        onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                        className="h-8 px-2.5"
+                      >
+                        <ChevronLeft className="w-4 h-4 mr-1" />
+                        <span>Prev</span>
+                      </Button>
+
+                      <div className="flex items-center gap-1.5 text-xs font-medium">
+                        <span>Page</span>
+                        <select
+                          value={currentPage}
+                          onChange={(e) => setCurrentPage(parseInt(e.target.value))}
+                          disabled={isProcessing}
+                          className="px-2 py-1 rounded border border-border bg-background text-foreground text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-primary"
+                        >
+                          {Array.from({ length: pageCount }, (_, i) => i + 1).map((p) => (
+                            <option key={p} value={p}>
+                              {p}
+                            </option>
+                          ))}
+                        </select>
+                        <span className="text-muted-foreground">of {pageCount}</span>
+                      </div>
+
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        size="sm"
+                        disabled={currentPage >= pageCount || isProcessing}
+                        onClick={() => setCurrentPage((p) => Math.min(pageCount, p + 1))}
+                        className="h-8 px-2.5"
+                      >
+                        <span>Next</span>
+                        <ChevronRight className="w-4 h-4 ml-1" />
+                      </Button>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={handleApplyToAllPages}
+                        disabled={isProcessing}
+                        className="h-8 text-xs font-medium gap-1.5"
+                      >
+                        <Copy className="w-3.5 h-3.5" />
+                        <span>Apply this crop to all pages</span>
+                      </Button>
+                      {appliedAllNotice && (
+                        <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium animate-pulse">
+                          Copied to all {pageCount} pages!
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                )}
+
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
                   {/* Visual Preview with Overlay Frame */}
                   <div className="lg:col-span-6 flex flex-col items-center justify-center p-6 rounded-xl border border-border bg-secondary/15 min-h-[320px]">
                     <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-1.5">
                       <Maximize2 className="w-3.5 h-3.5" />
-                      <span>Page 1 Crop Preview</span>
+                      <span>Page {currentPage} Crop Preview</span>
                     </div>
 
                     <div className="relative border-2 border-dashed border-border rounded shadow-md overflow-hidden max-w-[260px] bg-background">
-                      {previewThumbnail ? (
+                      {thumbnails[currentPage] ? (
                         <img
-                          src={previewThumbnail}
-                          alt="Page 1 preview"
+                          src={thumbnails[currentPage]}
+                          alt={`Page ${currentPage} preview`}
                           className="w-full h-auto block select-none"
                         />
                       ) : (
                         <div className="w-56 h-72 flex items-center justify-center text-xs text-muted-foreground">
-                          {previewLoading ? 'Generating preview...' : 'Document Page'}
+                          {previewLoading ? 'Generating preview...' : `Page ${currentPage}`}
                         </div>
                       )}
 
@@ -301,44 +454,46 @@ export const CropToolPage: FC = () => {
                       <div
                         className="absolute inset-0 pointer-events-none transition-all duration-150"
                         style={{
-                          top: `${margins.top}%`,
-                          bottom: `${margins.bottom}%`,
-                          left: `${margins.left}%`,
-                          right: `${margins.right}%`,
+                          top: `${currentCrop.top}%`,
+                          bottom: `${currentCrop.bottom}%`,
+                          left: `${currentCrop.left}%`,
+                          right: `${currentCrop.right}%`,
                           border: '2px solid rgb(225, 46, 0)',
                           boxShadow: '0 0 0 9999px rgba(15, 23, 42, 0.45)',
                         }}
                       />
                     </div>
                     <p className="text-[11px] text-muted-foreground mt-3 font-mono">
-                      Red outline indicates preserved content box
+                      Red outline indicates preserved content box for page {currentPage}
                     </p>
                   </div>
 
                   {/* Margin Adjustment Sliders */}
                   <div className="lg:col-span-6 space-y-5 p-4 rounded-xl border border-border bg-secondary/20">
-                    <div className="flex items-center justify-between border-b border-border pb-2">
-                      <span className="text-xs font-semibold uppercase tracking-wider text-foreground">
-                        Crop Margins (%)
-                      </span>
+                    <div className="flex flex-wrap items-center justify-between border-b border-border pb-2 gap-2">
+                      <div>
+                        <span className="text-xs font-semibold uppercase tracking-wider text-foreground">
+                          Page {currentPage} Margins (%)
+                        </span>
+                      </div>
                       <div className="flex items-center gap-1">
                         <button
                           type="button"
-                          onClick={() => setMargins({ top: 0, bottom: 0, left: 0, right: 0 })}
+                          onClick={() => setPageMarginUniform(0)}
                           className="text-[11px] px-2 py-0.5 rounded bg-muted hover:bg-muted/80 text-foreground transition-colors"
                         >
                           Reset (0%)
                         </button>
                         <button
                           type="button"
-                          onClick={() => setMargins({ top: 5, bottom: 5, left: 5, right: 5 })}
+                          onClick={() => setPageMarginUniform(5)}
                           className="text-[11px] px-2 py-0.5 rounded bg-muted hover:bg-muted/80 text-foreground transition-colors"
                         >
                           5% All
                         </button>
                         <button
                           type="button"
-                          onClick={() => setMargins({ top: 10, bottom: 10, left: 10, right: 10 })}
+                          onClick={() => setPageMarginUniform(10)}
                           className="text-[11px] px-2 py-0.5 rounded bg-muted hover:bg-muted/80 text-foreground transition-colors"
                         >
                           10% All
@@ -350,14 +505,14 @@ export const CropToolPage: FC = () => {
                     <div className="space-y-1">
                       <div className="flex justify-between text-xs">
                         <label htmlFor="crop-top-slider" className="font-medium text-foreground">Top Margin</label>
-                        <span className="font-mono text-muted-foreground">{margins.top}%</span>
+                        <span className="font-mono text-muted-foreground">{currentCrop.top}%</span>
                       </div>
                       <input
                         id="crop-top-slider"
                         type="range"
                         min="0"
                         max="40"
-                        value={margins.top}
+                        value={currentCrop.top}
                         onChange={(e) => updateMargin('top', parseInt(e.target.value))}
                         className="w-full accent-primary h-2 bg-muted rounded-lg cursor-pointer"
                       />
@@ -367,14 +522,14 @@ export const CropToolPage: FC = () => {
                     <div className="space-y-1">
                       <div className="flex justify-between text-xs">
                         <label htmlFor="crop-bottom-slider" className="font-medium text-foreground">Bottom Margin</label>
-                        <span className="font-mono text-muted-foreground">{margins.bottom}%</span>
+                        <span className="font-mono text-muted-foreground">{currentCrop.bottom}%</span>
                       </div>
                       <input
                         id="crop-bottom-slider"
                         type="range"
                         min="0"
                         max="40"
-                        value={margins.bottom}
+                        value={currentCrop.bottom}
                         onChange={(e) => updateMargin('bottom', parseInt(e.target.value))}
                         className="w-full accent-primary h-2 bg-muted rounded-lg cursor-pointer"
                       />
@@ -384,14 +539,14 @@ export const CropToolPage: FC = () => {
                     <div className="space-y-1">
                       <div className="flex justify-between text-xs">
                         <label htmlFor="crop-left-slider" className="font-medium text-foreground">Left Margin</label>
-                        <span className="font-mono text-muted-foreground">{margins.left}%</span>
+                        <span className="font-mono text-muted-foreground">{currentCrop.left}%</span>
                       </div>
                       <input
                         id="crop-left-slider"
                         type="range"
                         min="0"
                         max="40"
-                        value={margins.left}
+                        value={currentCrop.left}
                         onChange={(e) => updateMargin('left', parseInt(e.target.value))}
                         className="w-full accent-primary h-2 bg-muted rounded-lg cursor-pointer"
                       />
@@ -401,14 +556,14 @@ export const CropToolPage: FC = () => {
                     <div className="space-y-1">
                       <div className="flex justify-between text-xs">
                         <label htmlFor="crop-right-slider" className="font-medium text-foreground">Right Margin</label>
-                        <span className="font-mono text-muted-foreground">{margins.right}%</span>
+                        <span className="font-mono text-muted-foreground">{currentCrop.right}%</span>
                       </div>
                       <input
                         id="crop-right-slider"
                         type="range"
                         min="0"
                         max="40"
-                        value={margins.right}
+                        value={currentCrop.right}
                         onChange={(e) => updateMargin('right', parseInt(e.target.value))}
                         className="w-full accent-primary h-2 bg-muted rounded-lg cursor-pointer"
                       />
@@ -421,7 +576,12 @@ export const CropToolPage: FC = () => {
                   <div className="text-xs text-muted-foreground">
                     <span className="text-emerald-600 dark:text-emerald-400 font-medium flex items-center gap-1.5">
                       <CheckCircle2 className="w-4 h-4 inline" aria-hidden="true" />
-                      Preserving {100 - (margins.left + margins.right)}% width &times; {100 - (margins.top + margins.bottom)}% height across {pageCount || 'all'} pages.
+                      Preserving {100 - (currentCrop.left + currentCrop.right)}% width &times; {100 - (currentCrop.top + currentCrop.bottom)}% height on Page {currentPage}.
+                      {pageCount && pageCount > 1 && (
+                        <span className="text-muted-foreground ml-1">
+                          ({hasUniformCrop() ? 'Uniform across all pages' : 'Per-page custom crop'})
+                        </span>
+                      )}
                     </span>
                   </div>
 
