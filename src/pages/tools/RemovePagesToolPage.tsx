@@ -218,7 +218,7 @@ export const RemovePagesToolPage: FC = () => {
         <div className="p-6 sm:p-8 rounded-2xl border border-border bg-card shadow-xs mb-8">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-6 border-b border-border">
             <div className="flex items-center gap-4">
-              <div className="w-14 h-14 rounded-xl bg-destructive/10 text-destructive flex items-center justify-center shrink-0">
+              <div className="w-14 h-14 rounded-xl bg-vermillion/10 text-vermillion dark:bg-vermillion/20 dark:text-vermillion flex items-center justify-center shrink-0">
                 <FileMinus className="w-7 h-7" aria-hidden="true" />
               </div>
               <div>
@@ -230,7 +230,7 @@ export const RemovePagesToolPage: FC = () => {
                     Organize
                   </Badge>
                 </div>
-                <h1 className="text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight">
+                <h1 className="font-display text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight">
                   Remove PDF Pages
                 </h1>
               </div>
@@ -267,6 +267,7 @@ export const RemovePagesToolPage: FC = () => {
             outputs={[outputResult]}
             toolName="Pruned Document"
             toolIdentifier="[TOOL // 07 · PAGE PRUNER]"
+            onBackToEditing={() => setOutputResult(null)}
             onReset={handleReset}
           />
         ) : (

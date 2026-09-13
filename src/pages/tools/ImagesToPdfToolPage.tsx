@@ -321,7 +321,7 @@ export const ImagesToPdfToolPage: FC = () => {
         <div className="p-6 sm:p-8 rounded-2xl border border-border bg-card shadow-xs mb-8">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-6 border-b border-border">
             <div className="flex items-center gap-4">
-              <div className="w-14 h-14 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+              <div className="w-14 h-14 rounded-xl bg-coral/10 text-coral dark:bg-coral/20 dark:text-coral flex items-center justify-center shrink-0">
                 <FileImage className="w-7 h-7" aria-hidden="true" />
               </div>
               <div>
@@ -333,7 +333,7 @@ export const ImagesToPdfToolPage: FC = () => {
                     Convert
                   </Badge>
                 </div>
-                <h1 className="text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight">
+                <h1 className="font-display text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight">
                   Images to PDF
                 </h1>
               </div>
@@ -368,6 +368,9 @@ export const ImagesToPdfToolPage: FC = () => {
         {outputResult ? (
           <DownloadResultDocket
             outputs={[outputResult]}
+            toolName="Images to PDF"
+            toolIdentifier="[TOOL // 06 · IMAGE RASTERIZER]"
+            onBackToEditing={() => setOutputResult(null)}
             onReset={() => {
               setOutputResult(null);
               clearFiles();

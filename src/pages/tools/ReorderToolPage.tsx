@@ -224,7 +224,7 @@ export const ReorderToolPage: FC = () => {
         <div className="p-6 sm:p-8 rounded-2xl border border-border bg-card shadow-xs mb-8">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-6 border-b border-border">
             <div className="flex items-center gap-4">
-              <div className="w-14 h-14 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+              <div className="w-14 h-14 rounded-xl bg-violet/10 text-violet dark:bg-violet/20 dark:text-violet flex items-center justify-center shrink-0">
                 <ArrowUpDown className="w-7 h-7" aria-hidden="true" />
               </div>
               <div>
@@ -236,7 +236,7 @@ export const ReorderToolPage: FC = () => {
                     Organize
                   </Badge>
                 </div>
-                <h1 className="text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight">
+                <h1 className="font-display text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight">
                   Reorder PDF Pages
                 </h1>
               </div>
@@ -273,6 +273,7 @@ export const ReorderToolPage: FC = () => {
             outputs={[outputResult]}
             toolName="Reordered PDF"
             toolIdentifier="[TOOL // 03 · LIGHT TABLE]"
+            onBackToEditing={() => setOutputResult(null)}
             onReset={() => {
               setOutputResult(null);
               clearFiles();

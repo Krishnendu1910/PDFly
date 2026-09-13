@@ -95,7 +95,7 @@ export const Header: FC = () => {
           <span className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary text-primary-foreground shadow-xs">
             <FileText className="w-5 h-5" aria-hidden="true" />
           </span>
-          <span className="tracking-tight">PDFly</span>
+          <span className="font-display tracking-tight">PDFly</span>
         </Link>
 
         {/* Desktop Navigation */}

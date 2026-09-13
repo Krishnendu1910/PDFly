@@ -110,7 +110,7 @@ export const MergeToolPage: FC = () => {
         <div className="p-6 sm:p-8 rounded-2xl border border-border bg-card shadow-xs mb-8">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-6 border-b border-border">
             <div className="flex items-center gap-4">
-              <div className="w-14 h-14 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+              <div className="w-14 h-14 rounded-xl bg-cobalt/10 text-cobalt dark:bg-cobalt/20 dark:text-cobalt flex items-center justify-center shrink-0">
                 <Layers className="w-7 h-7" aria-hidden="true" />
               </div>
               <div>
@@ -122,7 +122,7 @@ export const MergeToolPage: FC = () => {
                     Organize
                   </Badge>
                 </div>
-                <h1 className="text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight">
+                <h1 className="font-display text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight">
                   Merge PDF
                 </h1>
               </div>
@@ -159,6 +159,7 @@ export const MergeToolPage: FC = () => {
             outputs={[outputResult]}
             toolName="Merged PDF"
             toolIdentifier="[TOOL // 01 · SHEET STACKER]"
+            onBackToEditing={() => setOutputResult(null)}
             onReset={() => {
               setOutputResult(null);
               clearFiles();

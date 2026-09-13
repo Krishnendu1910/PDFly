@@ -27,7 +27,7 @@ export const SectionHeading = forwardRef<HTMLDivElement, SectionHeadingProps>(
             </span>
           </div>
         )}
-        <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground">
+        <h2 className="font-display text-3xl sm:text-4xl font-bold tracking-tight text-foreground">
           {title}
         </h2>
         {description && (

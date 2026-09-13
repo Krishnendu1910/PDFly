@@ -1,42 +1,50 @@
 import { type FC } from 'react';
+import { motion, useReducedMotion } from 'framer-motion';
 import { Container } from '@/components/ui/Container';
 import { Card, CardContent } from '@/components/ui/Card';
-import { ShieldCheck, HardDrive, EyeOff, Info } from 'lucide-react';
+import { ShieldCheck, HardDrive, EyeOff } from 'lucide-react';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 
 export const PrivacyPage: FC = () => {
   useDocumentTitle(
     'Privacy Policy',
-    'Transparent disclosure of PDFly\'s local processing architecture, network boundaries, and data storage policy.',
+    'PDFly Privacy Policy: Local processing, zero server storage, and complete privacy.',
   );
+  const shouldReduceMotion = useReducedMotion();
+
   return (
-    <div className="py-12 sm:py-16">
+    <motion.div
+      initial={shouldReduceMotion ? undefined : { opacity: 0, y: 15 }}
+      animate={shouldReduceMotion ? undefined : { opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+      className="py-12 sm:py-16"
+    >
       <Container size="md">
         {/* Header */}
-        <div className="space-y-4 mb-12">
+        <div className="space-y-4 mb-10">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
             <ShieldCheck className="w-3.5 h-3.5" aria-hidden="true" />
-            <span>Transparency & Privacy</span>
+            <span>Privacy Policy</span>
           </div>
 
-          <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-foreground">
-            Privacy Policy & Statement
+          <h1 className="font-display text-3xl sm:text-5xl font-extrabold tracking-tight text-foreground">
+            Your Privacy Matters
           </h1>
 
           <p className="text-lg text-muted-foreground leading-relaxed">
-            A plain-language explanation of how PDFly operates, what data is stored, and our commitment to client-side document processing.
+            PDFly is built from the ground up to protect your documents. Here is how we handle your data.
           </p>
         </div>
 
-        {/* Informational Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-12">
+        {/* Quick Highlights */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-10">
           <Card className="border-border bg-card">
             <CardContent className="p-5 flex items-start gap-3">
               <HardDrive className="w-5 h-5 text-primary shrink-0 mt-0.5" aria-hidden="true" />
               <div>
-                <h3 className="text-base font-semibold text-foreground">Local Browser Memory</h3>
+                <h3 className="font-display text-base font-semibold text-foreground">Local Processing</h3>
                 <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
-                  Documents selected for processing remain inside your device’s volatile RAM and are deleted as soon as the tab is closed.
+                  Files are processed directly in your browser and never leave your device.
                 </p>
               </div>
             </CardContent>
@@ -44,54 +52,48 @@ export const PrivacyPage: FC = () => {
 
           <Card className="border-border bg-card">
             <CardContent className="p-5 flex items-start gap-3">
-              <EyeOff className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" aria-hidden="true" />
+              <EyeOff className="w-5 h-5 text-emerald shrink-0 mt-0.5" aria-hidden="true" />
               <div>
-                <h3 className="text-base font-semibold text-foreground">No Third-Party Trackers</h3>
+                <h3 className="font-display text-base font-semibold text-foreground">Zero Trackers</h3>
                 <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
-                  We do not load third-party advertising scripts, telemetry SDKs, or session-recording trackers.
+                  No tracking scripts, third-party analytics, or session recordings.
                 </p>
               </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Detailed Sections */}
+        {/* Main Privacy Points */}
         <div className="space-y-8 text-foreground">
-          <section className="space-y-3">
-            <h2 className="text-xl font-bold tracking-tight">1. Client-Side Document Processing</h2>
+          <section className="space-y-2">
+            <h2 className="font-display text-xl font-bold tracking-tight">1. Local Processing</h2>
             <p className="text-muted-foreground leading-relaxed text-sm sm:text-base">
-              PDFly is designed to perform all document modifications directly in your web browser. When you use any tool, the document data is read locally using browser FileReader and WebAssembly APIs. It is not transmitted over HTTP/HTTPS to our servers or any third-party computing infrastructure.
+              All PDF and image manipulation occurs directly inside your web browser. Documents are loaded into volatile browser memory and handled locally. We do not transmit your files over the network.
             </p>
           </section>
 
-          <section className="space-y-3">
-            <h2 className="text-xl font-bold tracking-tight">2. Information Stored Locally</h2>
+          <section className="space-y-2">
+            <h2 className="font-display text-xl font-bold tracking-tight">2. No Remote Storage</h2>
             <p className="text-muted-foreground leading-relaxed text-sm sm:text-base">
-              The only information stored across visits is your interface theme preference (light, dark, or system preference) using standard browser <code className="px-1.5 py-0.5 rounded bg-muted font-mono text-xs text-foreground">localStorage</code>. This key is named <code className="px-1.5 py-0.5 rounded bg-muted font-mono text-xs text-foreground">pdfly_theme_preference</code>. No user profile, document data, or identifying information is stored.
+              We do not operate file-storage servers or document databases. Your documents are never uploaded, saved, or viewed by anyone. When you close the browser tab, all loaded file data is immediately discarded.
             </p>
           </section>
 
-          <section className="space-y-3">
-            <h2 className="text-xl font-bold tracking-tight">3. Network Requests</h2>
+          <section className="space-y-2">
+            <h2 className="font-display text-xl font-bold tracking-tight">3. Local Storage</h2>
             <p className="text-muted-foreground leading-relaxed text-sm sm:text-base">
-              The only network requests made by this application are for static website assets (HTML, CSS, JavaScript bundles, and icons) necessary to display and run the tool in your browser.
+              PDFly does not use tracking cookies. The only data saved on your device is your interface theme preference (light, dark, or system mode) in browser <code className="px-1.5 py-0.5 rounded bg-muted font-mono text-xs text-foreground">localStorage</code> under the key <code className="px-1.5 py-0.5 rounded bg-muted font-mono text-xs text-foreground">pdfly_theme_preference</code>.
             </p>
           </section>
 
-          <section className="space-y-3">
-            <h2 className="text-xl font-bold tracking-tight">4. Current Development Status</h2>
-            <div className="p-4 rounded-xl border border-border bg-secondary/40 flex items-start gap-3 text-sm">
-              <Info className="w-5 h-5 text-primary shrink-0 mt-0.5" aria-hidden="true" />
-              <div className="space-y-1">
-                <p className="font-semibold text-foreground">Phase 2 Verification Notice</p>
-                <p className="text-muted-foreground leading-relaxed">
-                  This privacy policy accurately reflects the Phase 2 codebase. As subsequent phases introduce document processing engines in Phase 3, this statement will be updated to reflect the exact technical parameters of those local engines.
-                </p>
-              </div>
-            </div>
+          <section className="space-y-2">
+            <h2 className="font-display text-xl font-bold tracking-tight">4. Network Boundaries</h2>
+            <p className="text-muted-foreground leading-relaxed text-sm sm:text-base">
+              Network requests are limited to downloading the static website assets (HTML, CSS, and JavaScript bundles) required to run the application. No external telemetry, advertising networks, or third-party monitoring tools are loaded.
+            </p>
           </section>
         </div>
       </Container>
-    </div>
+    </motion.div>
   );
 };

@@ -13,6 +13,7 @@ export interface SignPdfOptions {
   scope?: 'page' | 'all'; // 'page' (default) or 'all'
   signaturePngBytes: Uint8Array;
   placement: SignaturePlacement;
+  pagePlacements?: Record<number, SignaturePlacement>; // Optional per-page override
   onProgress?: (progressPercent: number) => void;
 }
 
@@ -32,13 +33,13 @@ export async function signPdfDocument(
   input: File | Uint8Array,
   options: SignPdfOptions,
 ): Promise<SignPdfResult> {
-  const { pageNumber, scope = 'page', signaturePngBytes, placement, onProgress } = options;
+  const { pageNumber, scope = 'page', signaturePngBytes, placement, pagePlacements, onProgress } = options;
 
   if (!signaturePngBytes || signaturePngBytes.byteLength === 0) {
     throw new PdfOperationError('PROCESSING_FAILED', 'Signature image data is missing or empty.');
   }
 
-  const { PDFDocument } = await getPdfLib();
+  const { PDFDocument, degrees } = await getPdfLib();
 
   const bytes = input instanceof File
     ? new Uint8Array(await input.arrayBuffer())
@@ -90,22 +91,51 @@ export async function signPdfDocument(
     const pNum = targetPages[i];
     const page = doc.getPage(pNum - 1);
     const { width: pageWidth, height: pageHeight } = page.getSize();
+    const rot = ((page.getRotation().angle % 360) + 360) % 360;
 
-    // Convert relative viewport percentages to this page's PDF bottom-left coordinate space
-    const sigWidth = Math.max(20, (placement.widthPercent / 100) * pageWidth);
-    const sigHeight = Math.max(10, (placement.heightPercent / 100) * pageHeight);
+    // Use page-specific placement if available, otherwise global placement
+    const activePlacement = (pagePlacements && pagePlacements[pNum])
+      ? pagePlacements[pNum]
+      : placement;
 
-    const clampedXPercent = Math.max(0, Math.min(100 - placement.widthPercent, placement.xPercent));
-    const clampedYPercent = Math.max(0, Math.min(100 - placement.heightPercent, placement.yPercent));
+    // Visual dimensions accounting for page orientation/rotation
+    const isRotated90or270 = rot === 90 || rot === 270;
+    const visualWidth = isRotated90or270 ? pageHeight : pageWidth;
+    const visualHeight = isRotated90or270 ? pageWidth : pageHeight;
 
-    const pdfX = (clampedXPercent / 100) * pageWidth;
-    const pdfY = ((100 - (clampedYPercent + placement.heightPercent)) / 100) * pageHeight;
+    const sigWidth = Math.max(20, (activePlacement.widthPercent / 100) * visualWidth);
+    const sigHeight = Math.max(10, (activePlacement.heightPercent / 100) * visualHeight);
+
+    const clampedXPercent = Math.max(0, Math.min(100 - activePlacement.widthPercent, activePlacement.xPercent));
+    const clampedYPercent = Math.max(0, Math.min(100 - activePlacement.heightPercent, activePlacement.yPercent));
+
+    const visualX = (clampedXPercent / 100) * visualWidth;
+    const visualY = (clampedYPercent / 100) * visualHeight;
+
+    let drawX = visualX;
+    let drawY = visualHeight - (visualY + sigHeight);
+    let drawRotate = degrees(0);
+
+    if (rot === 90) {
+      drawX = visualY + sigHeight;
+      drawY = visualX;
+      drawRotate = degrees(90);
+    } else if (rot === 180) {
+      drawX = pageWidth - visualX;
+      drawY = pageHeight - visualY;
+      drawRotate = degrees(180);
+    } else if (rot === 270) {
+      drawX = pageWidth - (visualY + sigHeight);
+      drawY = pageHeight - visualX;
+      drawRotate = degrees(270);
+    }
 
     page.drawImage(pngImage, {
-      x: pdfX,
-      y: Math.max(0, pdfY),
+      x: drawX,
+      y: Math.max(0, drawY),
       width: sigWidth,
       height: sigHeight,
+      rotate: drawRotate,
     });
 
     onProgress?.(50 + Math.round(((i + 1) / targetPages.length) * 40));

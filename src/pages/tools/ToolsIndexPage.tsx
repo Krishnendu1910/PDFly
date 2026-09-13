@@ -43,7 +43,7 @@ export const ToolsIndexPage: FC = () => {
             <span>Browser Toolkit</span>
           </div>
 
-          <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-foreground">
+          <h1 className="font-display text-3xl sm:text-5xl font-extrabold tracking-tight text-foreground">
             Explore All PDF Tools
           </h1>
 
@@ -107,7 +107,7 @@ export const ToolsIndexPage: FC = () => {
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search tools..."
               aria-label="Search tools by name or description"
-              className="w-full pl-9.5 pr-8 py-2 rounded-lg border border-border bg-card text-foreground placeholder:text-muted-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring transition-colors"
+              className="w-full pl-10 pr-9 py-2 rounded-lg border border-border bg-card text-foreground placeholder:text-muted-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring transition-colors [&::-webkit-search-cancel-button]:appearance-none"
             />
             {searchQuery && (
               <button

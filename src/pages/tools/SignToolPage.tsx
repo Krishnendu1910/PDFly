@@ -42,6 +42,13 @@ const SIGN_CONFIG = {
 type PlacementPreset = 'bottom-right' | 'bottom-left' | 'bottom-center' | 'center';
 type SignatureScope = 'page' | 'all';
 
+const DEFAULT_PLACEMENT: SignaturePlacement = {
+  xPercent: 65,
+  yPercent: 82,
+  widthPercent: 28,
+  heightPercent: 12,
+};
+
 export const SignToolPage: FC = () => {
   useDocumentTitle(
     'Sign PDF',
@@ -53,21 +60,27 @@ export const SignToolPage: FC = () => {
   const [scope, setScope] = useState<SignatureScope>('page');
   const [previewThumbnail, setPreviewThumbnail] = useState<string | null>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
-  const [preset, setPreset] = useState<PlacementPreset>('bottom-right');
-  const [placement, setPlacement] = useState<SignaturePlacement>({
-    xPercent: 65,
-    yPercent: 82,
-    widthPercent: 28,
-    heightPercent: 12,
-  });
+  const [preset, setPreset] = useState<PlacementPreset | null>('bottom-right');
+  const [pagePlacements, setPagePlacements] = useState<Record<number, SignaturePlacement>>({});
+  const [allPagesPlacement, setAllPagesPlacement] = useState<SignaturePlacement>(DEFAULT_PLACEMENT);
+  const [signatureDataUrl, setSignatureDataUrl] = useState<string | null>(null);
   const [hasDrawn, setHasDrawn] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [progressPercent, setProgressPercent] = useState(0);
   const [operationErrors, setOperationErrors] = useState<FileValidationError[]>([]);
   const [outputResult, setOutputResult] = useState<OutputFileItem | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const isDrawingRef = useRef(false);
+  const previewContainerRef = useRef<HTMLDivElement | null>(null);
+  const isDraggingRef = useRef(false);
+  const dragStartRef = useRef<{ clientX: number; clientY: number; startXPercent: number; startYPercent: number }>({
+    clientX: 0,
+    clientY: 0,
+    startXPercent: 0,
+    startYPercent: 0,
+  });
 
   const {
     files,
@@ -82,6 +95,32 @@ export const SignToolPage: FC = () => {
 
   const activeFile = files[0];
 
+  // Active placement coordinates for the currently displayed page or all pages
+  const currentPlacement: SignaturePlacement =
+    scope === 'all'
+      ? allPagesPlacement
+      : pagePlacements[targetPage] ?? DEFAULT_PLACEMENT;
+
+  // Helper to detect if a given placement matches one of the 4 standard presets
+  const detectPreset = (p: SignaturePlacement): PlacementPreset | null => {
+    if (p.xPercent === 65 && p.yPercent === 82) return 'bottom-right';
+    if (p.xPercent === 7 && p.yPercent === 82) return 'bottom-left';
+    if (p.xPercent === 36 && p.yPercent === 82) return 'bottom-center';
+    if (p.xPercent === 36 && p.yPercent === 44) return 'center';
+    return null;
+  };
+
+  const updatePlacement = (newPlacement: SignaturePlacement) => {
+    if (scope === 'all') {
+      setAllPagesPlacement(newPlacement);
+    } else {
+      setPagePlacements((prev) => ({
+        ...prev,
+        [targetPage]: newPlacement,
+      }));
+    }
+  };
+
   // Inspect page count upon file selection
   useEffect(() => {
     let isCancelled = false;
@@ -93,6 +132,11 @@ export const SignToolPage: FC = () => {
       setOperationErrors([]);
       setTargetPage(1);
       setScope('page');
+      setPagePlacements({});
+      setAllPagesPlacement(DEFAULT_PLACEMENT);
+      setPreset('bottom-right');
+      setSignatureDataUrl(null);
+      setHasDrawn(false);
       return;
     }
 
@@ -138,22 +182,130 @@ export const SignToolPage: FC = () => {
     };
   }, [activeFile, targetPage]);
 
+  // Sync preset indicator when changing target page or scope
+  const handlePageChange = (newPage: number) => {
+    setTargetPage(newPage);
+    const existing = pagePlacements[newPage] ?? DEFAULT_PLACEMENT;
+    setPreset(detectPreset(existing));
+  };
+
+  const handleScopeChange = (newScope: SignatureScope) => {
+    setScope(newScope);
+    const active = newScope === 'all' ? allPagesPlacement : (pagePlacements[targetPage] ?? DEFAULT_PLACEMENT);
+    setPreset(detectPreset(active));
+  };
+
   // Update placement coordinates based on preset selection
   const applyPreset = (p: PlacementPreset) => {
     setPreset(p);
+    let coords: SignaturePlacement;
     switch (p) {
       case 'bottom-right':
-        setPlacement({ xPercent: 65, yPercent: 82, widthPercent: 28, heightPercent: 12 });
+        coords = { xPercent: 65, yPercent: 82, widthPercent: 28, heightPercent: 12 };
         break;
       case 'bottom-left':
-        setPlacement({ xPercent: 7, yPercent: 82, widthPercent: 28, heightPercent: 12 });
+        coords = { xPercent: 7, yPercent: 82, widthPercent: 28, heightPercent: 12 };
         break;
       case 'bottom-center':
-        setPlacement({ xPercent: 36, yPercent: 82, widthPercent: 28, heightPercent: 12 });
+        coords = { xPercent: 36, yPercent: 82, widthPercent: 28, heightPercent: 12 };
         break;
       case 'center':
-        setPlacement({ xPercent: 36, yPercent: 44, widthPercent: 28, heightPercent: 12 });
+        coords = { xPercent: 36, yPercent: 44, widthPercent: 28, heightPercent: 12 };
         break;
+    }
+    updatePlacement(coords);
+  };
+
+  // Dragging & pointer placement mechanics
+  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (e.button !== 0 && e.pointerType === 'mouse') return;
+    e.preventDefault();
+    e.stopPropagation();
+
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch {
+      // Ignore pointer capture errors in unsupported browsers
+    }
+
+    isDraggingRef.current = true;
+    setIsDragging(true);
+    dragStartRef.current = {
+      clientX: e.clientX,
+      clientY: e.clientY,
+      startXPercent: currentPlacement.xPercent,
+      startYPercent: currentPlacement.yPercent,
+    };
+  };
+
+  const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!isDraggingRef.current || !previewContainerRef.current) return;
+    e.preventDefault();
+
+    const rect = previewContainerRef.current.getBoundingClientRect();
+    if (rect.width <= 0 || rect.height <= 0) return;
+
+    const deltaX = e.clientX - dragStartRef.current.clientX;
+    const deltaY = e.clientY - dragStartRef.current.clientY;
+
+    const deltaXPercent = (deltaX / rect.width) * 100;
+    const deltaYPercent = (deltaY / rect.height) * 100;
+
+    const rawX = dragStartRef.current.startXPercent + deltaXPercent;
+    const rawY = dragStartRef.current.startYPercent + deltaYPercent;
+
+    const clampedX = Math.max(0, Math.min(100 - currentPlacement.widthPercent, rawX));
+    const clampedY = Math.max(0, Math.min(100 - currentPlacement.heightPercent, rawY));
+
+    updatePlacement({
+      ...currentPlacement,
+      xPercent: Math.round(clampedX * 10) / 10,
+      yPercent: Math.round(clampedY * 10) / 10,
+    });
+    setPreset(null); // Manual dragging overrides preset
+  };
+
+  const handlePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (isDraggingRef.current) {
+      try {
+        e.currentTarget.releasePointerCapture(e.pointerId);
+      } catch {
+        // Ignore
+      }
+      isDraggingRef.current = false;
+      setIsDragging(false);
+    }
+  };
+
+  // Keyboard accessibility: arrow keys adjust position
+  const handlePlacementKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    const step = e.shiftKey ? 5 : 1;
+    let newX = currentPlacement.xPercent;
+    let newY = currentPlacement.yPercent;
+    let handled = false;
+
+    if (e.key === 'ArrowLeft') {
+      newX = Math.max(0, newX - step);
+      handled = true;
+    } else if (e.key === 'ArrowRight') {
+      newX = Math.min(100 - currentPlacement.widthPercent, newX + step);
+      handled = true;
+    } else if (e.key === 'ArrowUp') {
+      newY = Math.max(0, newY - step);
+      handled = true;
+    } else if (e.key === 'ArrowDown') {
+      newY = Math.min(100 - currentPlacement.heightPercent, newY + step);
+      handled = true;
+    }
+
+    if (handled) {
+      e.preventDefault();
+      updatePlacement({
+        ...currentPlacement,
+        xPercent: Math.round(newX * 10) / 10,
+        yPercent: Math.round(newY * 10) / 10,
+      });
+      setPreset(null);
     }
   };
 
@@ -196,6 +348,10 @@ export const SignToolPage: FC = () => {
 
   const stopDrawing = () => {
     isDrawingRef.current = false;
+    const canvas = canvasRef.current;
+    if (canvas) {
+      setSignatureDataUrl(canvas.toDataURL('image/png'));
+    }
   };
 
   const handleMouseDown = (e: MouseEvent<HTMLCanvasElement>) => {
@@ -228,6 +384,7 @@ export const SignToolPage: FC = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
     }
     setHasDrawn(false);
+    setSignatureDataUrl(null);
   };
 
   const handleApplySignature = async () => {
@@ -254,7 +411,8 @@ export const SignToolPage: FC = () => {
         pageNumber: targetPage,
         scope,
         signaturePngBytes: pngBytes,
-        placement,
+        placement: currentPlacement,
+        pagePlacements: scope === 'page' ? pagePlacements : undefined,
         onProgress: (pct) => setProgressPercent(pct),
       });
 
@@ -286,8 +444,12 @@ export const SignToolPage: FC = () => {
     setPageCount(null);
     setPreviewThumbnail(null);
     setHasDrawn(false);
+    setSignatureDataUrl(null);
     setTargetPage(1);
     setScope('page');
+    setPagePlacements({});
+    setAllPagesPlacement(DEFAULT_PLACEMENT);
+    setPreset('bottom-right');
     handleClearSignature();
   };
 
@@ -311,7 +473,7 @@ export const SignToolPage: FC = () => {
         <div className="p-6 sm:p-8 rounded-2xl border border-border bg-card shadow-xs mb-8">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-6 border-b border-border">
             <div className="flex items-center gap-4">
-              <div className="w-14 h-14 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+              <div className="w-14 h-14 rounded-xl bg-violet/10 text-violet dark:bg-violet/20 dark:text-violet flex items-center justify-center shrink-0">
                 <PenTool className="w-7 h-7" aria-hidden="true" />
               </div>
               <div>
@@ -323,7 +485,7 @@ export const SignToolPage: FC = () => {
                     Sign
                   </Badge>
                 </div>
-                <h1 className="text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight">
+                <h1 className="font-display text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight">
                   Sign PDF
                 </h1>
               </div>
@@ -368,6 +530,7 @@ export const SignToolPage: FC = () => {
             outputs={[outputResult]}
             toolName="Signed Document"
             toolIdentifier="[TOOL // 13 · SIGNATURE EMBEDDER]"
+            onBackToEditing={() => setOutputResult(null)}
             onReset={handleReset}
           />
         ) : (
@@ -455,7 +618,7 @@ export const SignToolPage: FC = () => {
                       <div className="grid grid-cols-2 gap-2">
                         <button
                           type="button"
-                          onClick={() => setScope('page')}
+                          onClick={() => handleScopeChange('page')}
                           className={`py-2 px-3 text-xs font-medium rounded-lg border transition-all text-center flex items-center justify-center gap-1.5 ${
                             scope === 'page'
                               ? 'bg-primary text-primary-foreground border-primary shadow-xs'
@@ -470,7 +633,7 @@ export const SignToolPage: FC = () => {
                         </button>
                         <button
                           type="button"
-                          onClick={() => setScope('all')}
+                          onClick={() => handleScopeChange('all')}
                           className={`py-2 px-3 text-xs font-medium rounded-lg border transition-all text-center flex items-center justify-center gap-1.5 ${
                             scope === 'all'
                               ? 'bg-primary text-primary-foreground border-primary shadow-xs'
@@ -495,7 +658,7 @@ export const SignToolPage: FC = () => {
                         <select
                           id="sign-page-select"
                           value={targetPage}
-                          onChange={(e) => setTargetPage(parseInt(e.target.value))}
+                          onChange={(e) => handlePageChange(parseInt(e.target.value))}
                           className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary"
                         >
                           {Array.from({ length: pageCount }, (_, i) => i + 1).map((p) => (
@@ -513,11 +676,17 @@ export const SignToolPage: FC = () => {
                       </div>
                     )}
 
-                    {/* Position Presets */}
+                    {/* Position Presets & Free Placement Indicator */}
                     <div className="space-y-2 pt-2">
-                      <label className="text-xs font-semibold uppercase tracking-wider text-foreground block">
-                        Signature Placement
-                      </label>
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs font-semibold uppercase tracking-wider text-foreground block">
+                          Signature Placement
+                        </label>
+                        <span className="text-[11px] font-mono text-muted-foreground">
+                          {preset ? 'Quick preset' : 'Free placement'}
+                        </span>
+                      </div>
+
                       <div className="grid grid-cols-2 gap-2">
                         {(
                           [
@@ -541,48 +710,85 @@ export const SignToolPage: FC = () => {
                           </button>
                         ))}
                       </div>
+                      <p className="text-[11px] text-muted-foreground font-mono">
+                        Drag the signature onto the document preview or choose a preset.
+                      </p>
                     </div>
                   </div>
 
-                  {/* Right Column: Page Placement Preview */}
-                  <div className="lg:col-span-6 flex flex-col items-center justify-center p-6 rounded-xl border border-border bg-secondary/15 min-h-[320px]">
+                  {/* Right Column: Page Placement Preview & Draggable Overlay */}
+                  <div className="lg:col-span-6 flex flex-col items-center justify-center p-6 rounded-xl border border-border bg-secondary/15 min-h-[360px]">
                     <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
                       {scope === 'all'
                         ? `Placement Preview (Page ${targetPage} Reference)`
                         : `Page ${targetPage} Placement Preview`}
                     </div>
 
-                    <div className="relative border border-border rounded shadow-md overflow-hidden max-w-[240px] bg-background">
+                    <div
+                      ref={previewContainerRef}
+                      className="relative border border-border rounded shadow-md overflow-hidden w-full max-w-[280px] sm:max-w-[320px] bg-background select-none touch-none"
+                    >
                       {previewThumbnail ? (
                         <img
                           src={previewThumbnail}
                           alt={`Page ${targetPage} preview`}
-                          className="w-full h-auto block select-none"
+                          className="w-full h-auto block select-none pointer-events-none"
+                          draggable={false}
                         />
                       ) : (
-                        <div className="w-52 h-68 flex items-center justify-center text-xs text-muted-foreground">
+                        <div className="w-52 h-72 flex items-center justify-center text-xs text-muted-foreground">
                           {previewLoading ? 'Loading page...' : `Page ${targetPage}`}
                         </div>
                       )}
 
-                      {/* Signature Placement Badge on Preview */}
+                      {/* Interactive Draggable Signature Overlay */}
                       <div
-                        className="absolute border-2 border-primary bg-primary/15 rounded flex items-center justify-center text-[10px] font-bold text-primary transition-all duration-150 pointer-events-none"
+                        tabIndex={0}
+                        role="region"
+                        aria-label={`Signature placement on page ${targetPage}. Position: ${Math.round(currentPlacement.xPercent)}% from left, ${Math.round(currentPlacement.yPercent)}% from top. Use arrow keys to reposition.`}
+                        onPointerDown={handlePointerDown}
+                        onPointerMove={handlePointerMove}
+                        onPointerUp={handlePointerUp}
+                        onPointerCancel={handlePointerUp}
+                        onKeyDown={handlePlacementKeyDown}
                         style={{
-                          left: `${placement.xPercent}%`,
-                          top: `${placement.yPercent}%`,
-                          width: `${placement.widthPercent}%`,
-                          height: `${placement.heightPercent}%`,
+                          left: `${currentPlacement.xPercent}%`,
+                          top: `${currentPlacement.yPercent}%`,
+                          width: `${currentPlacement.widthPercent}%`,
+                          height: `${currentPlacement.heightPercent}%`,
+                          touchAction: 'none',
                         }}
+                        className={`absolute rounded-[3px] border-2 flex items-center justify-center p-1 cursor-grab active:cursor-grabbing transition-shadow select-none ${
+                          isDragging
+                            ? 'border-primary bg-primary/20 shadow-lg ring-2 ring-primary/40 cursor-grabbing'
+                            : 'border-primary/80 bg-primary/10 hover:border-primary hover:bg-primary/15'
+                        } focus:outline-none focus-visible:ring-2 focus-visible:ring-ring`}
+                        title="Drag signature to reposition"
                       >
-                        <span>Signature</span>
+                        {signatureDataUrl ? (
+                          <img
+                            src={signatureDataUrl}
+                            alt="Drawn signature"
+                            className="w-full h-full object-contain pointer-events-none select-none"
+                            draggable={false}
+                          />
+                        ) : (
+                          <span className="text-[10px] font-mono uppercase tracking-wider font-semibold text-primary/80 select-none">
+                            Signature
+                          </span>
+                        )}
                       </div>
                     </div>
-                    <p className="text-[11px] text-muted-foreground mt-3 font-mono">
-                      {scope === 'all'
-                        ? 'Position is proportionally mapped across all pages'
-                        : 'Box indicates relative placement coordinates'}
-                    </p>
+
+                    <div className="flex flex-col items-center gap-1 mt-3 text-center">
+                      <p className="text-[11px] font-mono text-muted-foreground">
+                        Drag signature or use arrow keys to position
+                      </p>
+                      <span className="text-[10px] font-mono text-muted-foreground/80 bg-muted/40 px-2 py-0.5 rounded border border-border/50">
+                        X: {Math.round(currentPlacement.xPercent)}% · Y: {Math.round(currentPlacement.yPercent)}%
+                        {preset ? ` · [${preset.replace('-', ' ').toUpperCase()}]` : ' · [CUSTOM]'}
+                      </span>
+                    </div>
                   </div>
                 </div>
 

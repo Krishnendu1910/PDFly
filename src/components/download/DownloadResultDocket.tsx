@@ -5,6 +5,8 @@ import {
   RefreshCw,
   FileCheck,
   Layers,
+  Eye,
+  ArrowLeft,
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { downloadPdfBytes } from '@/lib/pdf/utils/download';
@@ -14,6 +16,7 @@ import {
   stripPdfExtension,
   getSplitDefaultFilename,
 } from '@/utils/filenameUtils';
+import { PdfPreviewModal } from '@/components/preview';
 
 export interface OutputFileItem {
   id: string;
@@ -30,6 +33,7 @@ export interface DownloadResultDocketProps {
   toolIdentifier?: string; // e.g. "[TOOL // 01 · SHEET STACKER]"
   isSplitBatch?: boolean;
   onReset?: () => void;
+  onBackToEditing?: () => void;
   onDownloadSuccess?: (filename: string) => void;
   className?: string;
 }
@@ -40,6 +44,7 @@ export const DownloadResultDocket: FC<DownloadResultDocketProps> = ({
   toolIdentifier = '[DISCHARGE // IN-MEMORY]',
   isSplitBatch = false,
   onReset,
+  onBackToEditing,
   onDownloadSuccess,
   className = '',
 }) => {
@@ -51,6 +56,7 @@ export const DownloadResultDocket: FC<DownloadResultDocketProps> = ({
   const [singleFilename, setSingleFilename] = useState<string>(initialSingleName);
   const [isDownloadingSingle, setIsDownloadingSingle] = useState(false);
   const [downloadSuccessSingle, setDownloadSuccessSingle] = useState(false);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
   // State for multi-output mode (Split batch)
   const [batchBaseName, setBatchBaseName] = useState<string>('');
@@ -64,6 +70,7 @@ export const DownloadResultDocket: FC<DownloadResultDocketProps> = ({
   const [downloadedItems, setDownloadedItems] = useState<Record<string, boolean>>({});
   const [isDownloadingAll, setIsDownloadingAll] = useState(false);
   const [downloadAllSuccess, setDownloadAllSuccess] = useState(false);
+  const [previewItem, setPreviewItem] = useState<OutputFileItem | null>(null);
 
   // Total combined size
   const totalCombinedBytes = outputs.reduce((sum, item) => sum + (item.byteSize || item.pdfBytes.byteLength), 0);
@@ -175,8 +182,8 @@ export const DownloadResultDocket: FC<DownloadResultDocketProps> = ({
         {/* Status Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border pb-4">
           <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-archival-green dark:bg-[#2BB064]" aria-hidden="true" />
-            <span className="font-mono text-xs uppercase tracking-wider text-archival-green dark:text-[#2BB064] font-semibold">
+            <span className="w-2 h-2 rounded-full bg-emerald" aria-hidden="true" />
+            <span className="font-mono text-xs uppercase tracking-wider text-emerald font-semibold">
               {toolIdentifier}
             </span>
           </div>
@@ -243,32 +250,56 @@ export const DownloadResultDocket: FC<DownloadResultDocketProps> = ({
 
         {/* Action Trigger Rail */}
         <div className="pt-4 border-t border-border flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-          {onReset ? (
-            <Button
-              type="button"
-              variant="outline"
-              size="md"
-              onClick={onReset}
-              className="font-mono text-xs uppercase tracking-wider order-2 sm:order-1"
-            >
-              <RefreshCw className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" />
-              <span>Process Another Document</span>
-            </Button>
-          ) : (
-            <div className="order-2 sm:order-1" />
-          )}
+          <div className="flex flex-wrap items-center gap-2 order-2 sm:order-1">
+            {onBackToEditing && (
+              <Button
+                type="button"
+                variant="outline"
+                size="md"
+                onClick={onBackToEditing}
+                className="font-mono text-xs uppercase tracking-wider"
+              >
+                <ArrowLeft className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" />
+                <span>Back to Editing</span>
+              </Button>
+            )}
+
+            {onReset && (
+              <Button
+                type="button"
+                variant="outline"
+                size="md"
+                onClick={onReset}
+                className="font-mono text-xs uppercase tracking-wider"
+              >
+                <RefreshCw className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" />
+                <span>Process Another Document</span>
+              </Button>
+            )}
+          </div>
 
           <div className="flex items-center gap-3 order-1 sm:order-2">
             {downloadSuccessSingle && (
               <span
                 role="status"
                 aria-live="polite"
-                className="hidden sm:inline-flex items-center gap-1.5 font-mono text-xs text-archival-green dark:text-[#2BB064] uppercase"
+                className="hidden sm:inline-flex items-center gap-1.5 font-mono text-xs text-emerald uppercase"
               >
                 <CheckCircle2 className="w-4 h-4" aria-hidden="true" />
                 <span>Discharged</span>
               </span>
             )}
+
+            <Button
+              type="button"
+              variant="outline"
+              size="md"
+              onClick={() => setIsPreviewOpen(true)}
+              className="font-mono text-xs uppercase tracking-wider font-semibold"
+            >
+              <Eye className="w-4 h-4 mr-1.5" aria-hidden="true" />
+              <span>Preview PDF</span>
+            </Button>
 
             <Button
               type="button"
@@ -283,6 +314,26 @@ export const DownloadResultDocket: FC<DownloadResultDocketProps> = ({
             </Button>
           </div>
         </div>
+
+        {/* Universal PDF Result Preview Modal */}
+        {outputs[0] && (
+          <PdfPreviewModal
+            isOpen={isPreviewOpen}
+            onClose={() => setIsPreviewOpen(false)}
+            pdfBytes={outputs[0].pdfBytes}
+            filename={sanitizedPreview}
+            onDownload={handleDownloadSingle}
+            onBackToEditing={
+              onBackToEditing
+                ? () => {
+                    setIsPreviewOpen(false);
+                    onBackToEditing();
+                  }
+                : undefined
+            }
+            toolName={toolName}
+          />
+        )}
       </section>
     );
   }
@@ -304,8 +355,8 @@ export const DownloadResultDocket: FC<DownloadResultDocketProps> = ({
       {/* Batch Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border pb-4">
         <div className="flex items-center gap-2">
-          <Layers className="w-4 h-4 text-archival-green dark:text-[#2BB064]" aria-hidden="true" />
-          <span className="font-mono text-xs uppercase tracking-wider text-archival-green dark:text-[#2BB064] font-semibold">
+          <Layers className="w-4 h-4 text-emerald" aria-hidden="true" />
+          <span className="font-mono text-xs uppercase tracking-wider text-emerald font-semibold">
             {toolIdentifier} · {outputs.length} {outputs.length === 1 ? 'FILE READY' : 'FILES READY'}
           </span>
         </div>
@@ -425,14 +476,26 @@ export const DownloadResultDocket: FC<DownloadResultDocketProps> = ({
                 </div>
               </div>
 
-              {/* Individual Item Download Button */}
-              <div className="flex items-center justify-end gap-3 shrink-0 pt-2 md:pt-0 border-t md:border-t-0 border-border/60">
+              {/* Individual Item Action Buttons */}
+              <div className="flex items-center justify-end gap-2.5 shrink-0 pt-2 md:pt-0 border-t md:border-t-0 border-border/60">
                 {isItemDownloaded && (
-                  <span className="font-mono text-[11px] text-archival-green dark:text-[#2BB064] flex items-center gap-1">
+                  <span className="font-mono text-[11px] text-emerald flex items-center gap-1">
                     <CheckCircle2 className="w-3.5 h-3.5" aria-hidden="true" />
                     <span>Downloaded</span>
                   </span>
                 )}
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPreviewItem(item)}
+                  className="font-mono text-xs uppercase tracking-wider rounded-[3px]"
+                  title={`Preview ${safeName}`}
+                >
+                  <Eye className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" />
+                  <span>Preview</span>
+                </Button>
 
                 <Button
                   type="button"
@@ -453,27 +516,40 @@ export const DownloadResultDocket: FC<DownloadResultDocketProps> = ({
 
       {/* Global Action Trigger Rail */}
       <div className="pt-4 border-t border-border flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-        {onReset ? (
-          <Button
-            type="button"
-            variant="outline"
-            size="md"
-            onClick={onReset}
-            className="font-mono text-xs uppercase tracking-wider order-2 sm:order-1"
-          >
-            <RefreshCw className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" />
-            <span>Process Another Document</span>
-          </Button>
-        ) : (
-          <div className="order-2 sm:order-1" />
-        )}
+        <div className="flex flex-wrap items-center gap-2 order-2 sm:order-1">
+          {onBackToEditing && (
+            <Button
+              type="button"
+              variant="outline"
+              size="md"
+              onClick={onBackToEditing}
+              className="font-mono text-xs uppercase tracking-wider"
+            >
+              <ArrowLeft className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" />
+              <span>Back to Editing</span>
+            </Button>
+          )}
+
+          {onReset && (
+            <Button
+              type="button"
+              variant="outline"
+              size="md"
+              onClick={onReset}
+              className="font-mono text-xs uppercase tracking-wider"
+            >
+              <RefreshCw className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" />
+              <span>Process Another Document</span>
+            </Button>
+          )}
+        </div>
 
         <div className="flex items-center gap-3 order-1 sm:order-2">
           {downloadAllSuccess && (
             <span
               role="status"
               aria-live="polite"
-              className="hidden sm:inline-flex items-center gap-1.5 font-mono text-xs text-archival-green dark:text-[#2BB064] uppercase"
+              className="hidden sm:inline-flex items-center gap-1.5 font-mono text-xs text-emerald uppercase"
             >
               <CheckCircle2 className="w-4 h-4" aria-hidden="true" />
               <span>All Files Discharged</span>
@@ -497,6 +573,31 @@ export const DownloadResultDocket: FC<DownloadResultDocketProps> = ({
           </Button>
         </div>
       </div>
+
+      {/* Batch Item PDF Result Preview Modal */}
+      {previewItem && (
+        <PdfPreviewModal
+          isOpen={!!previewItem}
+          onClose={() => setPreviewItem(null)}
+          pdfBytes={previewItem.pdfBytes}
+          filename={prepareSafeDownloadFilename(
+            itemFilenames[previewItem.id] || stripPdfExtension(previewItem.defaultFilename),
+            previewItem.defaultFilename,
+          )}
+          onDownload={() => {
+            handleDownloadItem(previewItem);
+          }}
+          onBackToEditing={
+            onBackToEditing
+              ? () => {
+                  setPreviewItem(null);
+                  onBackToEditing();
+                }
+              : undefined
+          }
+          toolName={`${toolName} (${previewItem.label || 'Output'})`}
+        />
+      )}
     </section>
   );
 };
