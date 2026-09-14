@@ -22,8 +22,8 @@ const DROPDOWN_CATEGORIES = [
     toolIds: ["crop", "page-numbers", "watermark"],
   },
   {
-    title: "Optimize & Sign",
-    toolIds: ["compress", "sign"],
+    title: "Optimize & Security",
+    toolIds: ["compress", "sign", "protect"],
   },
 ] as const;
 
@@ -87,7 +87,7 @@ export const Header: FC = () => {
   return (
     <>
       <header className="sticky top-0 z-40 w-full border-b border-border bg-background/90 backdrop-blur-md">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between relative">
           {/* LEFT SECTION: Logo + Tools Dropdown + Direct Links */}
           <div className="flex items-center gap-2 sm:gap-4 lg:gap-6">
             {/* Brand Logo */}
@@ -102,8 +102,8 @@ export const Header: FC = () => {
               <span className="font-display tracking-tight font-bold">PDFly</span>
             </Link>
 
-            {/* Tools Mega-Dropdown (Desktop) */}
-            <div className="relative hidden md:block" ref={dropdownRef}>
+            {/* Tools Mega-Dropdown (Desktop & Tablet) */}
+            <div className="md:static lg:relative hidden md:block" ref={dropdownRef}>
               <button
                 type="button"
                 aria-expanded={toolsDropdownOpen}
@@ -136,44 +136,68 @@ export const Header: FC = () => {
                     animate={shouldReduceMotion ? undefined : { opacity: 1, y: 0 }}
                     exit={shouldReduceMotion ? undefined : { opacity: 0, y: 4 }}
                     transition={{ duration: 0.15 }}
-                    className="absolute left-0 top-full mt-2 w-[760px] max-w-[90vw] rounded-lg border border-border bg-card shadow-lg z-50 overflow-hidden"
+                    className={cn(
+                      "absolute top-full mt-2 rounded-lg border border-border bg-card shadow-lg z-50 overflow-hidden",
+                      // Tablet (768px – 1023px): contained inside viewport with minimum 16px margins
+                      "left-4 sm:left-6 w-[min(720px,calc(100vw-48px))] max-w-[calc(100vw-32px)]",
+                      // Desktop (>= 1024px): anchored directly below Tools button
+                      "lg:left-0 lg:w-[760px] lg:max-w-none",
+                    )}
                   >
-                    <div className="grid grid-cols-4 gap-4 p-5">
-                      {DROPDOWN_CATEGORIES.map((cat) => (
-                        <div key={cat.title} className="space-y-2">
-                          <h4 className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground px-2">
-                            {cat.title}
-                          </h4>
-                          <div className="space-y-0.5">
-                            {cat.toolIds.map((id) => {
-                              const tool = TOOL_MAP[id];
-                              if (!tool) return null;
-                              const theme = getToolTheme(tool.id || tool.slug);
-                              const Icon = tool.icon;
-                              return (
-                                <Link
-                                  key={tool.id}
-                                  to={ROUTES.TOOL_DETAIL(tool.slug)}
-                                  onClick={() => setToolsDropdownOpen(false)}
-                                  className="flex items-center gap-2 p-1.5 rounded-md hover:bg-muted text-foreground transition-colors group"
-                                >
-                                  <span
-                                    className={cn(
-                                      "w-6 h-6 rounded flex items-center justify-center shrink-0 transition-transform duration-150 group-hover:scale-105",
-                                      theme.iconBg,
-                                    )}
+                    <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 p-5">
+                      {DROPDOWN_CATEGORIES.map((cat) => {
+                        const isOrganize = cat.title === "Organize";
+                        const isOptimize = cat.title === "Optimize & Security";
+
+                        return (
+                          <div
+                            key={cat.title}
+                            className={cn(
+                              "space-y-2",
+                              isOrganize && "md:row-span-2 lg:row-span-1",
+                              isOptimize && "md:col-span-2 lg:col-span-1",
+                            )}
+                          >
+                            <h4 className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground px-2">
+                              {cat.title}
+                            </h4>
+                            <div
+                              className={cn(
+                                "space-y-0.5",
+                                isOptimize &&
+                                  "md:grid md:grid-cols-3 md:gap-2 md:space-y-0 lg:space-y-0.5 lg:grid-cols-1 lg:gap-0",
+                              )}
+                            >
+                              {cat.toolIds.map((id) => {
+                                const tool = TOOL_MAP[id];
+                                if (!tool) return null;
+                                const theme = getToolTheme(tool.id || tool.slug);
+                                const Icon = tool.icon;
+                                return (
+                                  <Link
+                                    key={tool.id}
+                                    to={ROUTES.TOOL_DETAIL(tool.slug)}
+                                    onClick={() => setToolsDropdownOpen(false)}
+                                    className="flex items-center gap-2 p-1.5 rounded-md hover:bg-muted text-foreground transition-colors group"
                                   >
-                                    <Icon className="w-3.5 h-3.5" aria-hidden="true" />
-                                  </span>
-                                  <span className="text-xs font-medium truncate group-hover:text-primary transition-colors">
-                                    {tool.name}
-                                  </span>
-                                </Link>
-                              );
-                            })}
+                                    <span
+                                      className={cn(
+                                        "w-6 h-6 rounded flex items-center justify-center shrink-0 transition-transform duration-150 group-hover:scale-105",
+                                        theme.iconBg,
+                                      )}
+                                    >
+                                      <Icon className="w-3.5 h-3.5" aria-hidden="true" />
+                                    </span>
+                                    <span className="text-xs font-medium group-hover:text-primary transition-colors">
+                                      {tool.name}
+                                    </span>
+                                  </Link>
+                                );
+                              })}
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
 
                     {/* Dropdown Footer Action */}
@@ -184,9 +208,9 @@ export const Header: FC = () => {
                       <Link
                         to={ROUTES.TOOLS}
                         onClick={() => setToolsDropdownOpen(false)}
-                        className="font-semibold text-primary hover:underline inline-flex items-center gap-1"
+                        className="font-semibold text-primary hover:underline inline-flex items-center gap-1 shrink-0"
                       >
-                        <span>Explore all tools</span>
+                        <span>Explore All 15 Tools</span>
                         <ArrowRight className="w-3.5 h-3.5" aria-hidden="true" />
                       </Link>
                     </div>
@@ -338,7 +362,7 @@ export const Header: FC = () => {
                   onClick={() => setMobileMenuOpen(false)}
                   className="flex items-center justify-center gap-2 w-full p-3 rounded-lg bg-primary text-primary-foreground font-semibold text-sm shadow-xs hover:bg-primary/90 transition-colors"
                 >
-                  <span>Explore All 14 Tools</span>
+                  <span>Explore All 15 Tools</span>
                   <ArrowRight className="w-4 h-4" aria-hidden="true" />
                 </Link>
               </div>
