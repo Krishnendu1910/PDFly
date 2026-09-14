@@ -7,11 +7,12 @@ export const Footer: FC = () => {
   return (
     <footer className="w-full border-t border-border bg-card mt-auto">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
-        {/* Top Tier: Brand + Social Icons on Left, Navigation on Right */}
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 pb-6 border-b border-border">
-          {/* Left: Brand & Icon-Only Social Profiles */}
-          <div className="space-y-1.5">
-            <div className="flex items-center gap-3">
+        {/* Top Tier: Single horizontal row with Brand + Socials on Left, Navigation on Right, Tagline below */}
+        <div className="space-y-2 pb-6 border-b border-border">
+          {/* Top Row: Brand & Socials on Left, Navigation on Right */}
+          <div className="flex items-center justify-between gap-4">
+            {/* Left: Brand & Icon-Only Social Profiles */}
+            <div className="flex items-center gap-2.5 sm:gap-3 shrink-0">
               <Link
                 to={ROUTES.HOME}
                 className="inline-flex items-center gap-2 text-foreground font-bold text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded p-0.5"
@@ -27,7 +28,7 @@ export const Footer: FC = () => {
               <span className="h-5 w-px bg-border shrink-0" aria-hidden="true" />
 
               {/* Icon-Only Social Links */}
-              <div className="flex items-center gap-3.5 text-muted-foreground">
+              <div className="flex items-center gap-3 sm:gap-3.5 text-muted-foreground">
                 <a
                   href="https://github.com/Krishnendu1910"
                   target="_blank"
@@ -68,29 +69,30 @@ export const Footer: FC = () => {
               </div>
             </div>
 
-            <p className="text-xs text-muted-foreground leading-normal">
-              Simple PDF tools that run in your browser.
-            </p>
+            {/* Right: Navigation Links (About, Privacy only) */}
+            <nav
+              aria-label="Footer Navigation"
+              className="flex items-center gap-4 sm:gap-6 text-xs sm:text-sm font-medium text-muted-foreground shrink-0"
+            >
+              <Link
+                to={ROUTES.ABOUT}
+                className="hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded px-1 py-0.5"
+              >
+                About
+              </Link>
+              <Link
+                to={ROUTES.PRIVACY}
+                className="hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded px-1 py-0.5"
+              >
+                Privacy
+              </Link>
+            </nav>
           </div>
 
-          {/* Right: Navigation Links (About, Privacy only) */}
-          <nav
-            aria-label="Footer Navigation"
-            className="flex items-center gap-5 sm:gap-6 text-xs sm:text-sm font-medium text-muted-foreground"
-          >
-            <Link
-              to={ROUTES.ABOUT}
-              className="hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded px-1 py-0.5"
-            >
-              About
-            </Link>
-            <Link
-              to={ROUTES.PRIVACY}
-              className="hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded px-1 py-0.5"
-            >
-              Privacy
-            </Link>
-          </nav>
+          {/* Tagline */}
+          <p className="text-xs text-muted-foreground leading-normal">
+            Simple PDF tools that run in your browser.
+          </p>
         </div>
 
         {/* Bottom Tier: Copyright on Left Extreme, Credit on Right Extreme */}
