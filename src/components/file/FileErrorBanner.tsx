@@ -5,9 +5,10 @@ import type { FileValidationError } from '@/types/file';
 export interface FileErrorBannerProps {
   errors: readonly FileValidationError[];
   onDismiss?: () => void;
+  title?: string;
 }
 
-export const FileErrorBanner: FC<FileErrorBannerProps> = ({ errors, onDismiss }) => {
+export const FileErrorBanner: FC<FileErrorBannerProps> = ({ errors, onDismiss, title }) => {
   if (!errors.length) return null;
 
   return (
@@ -20,7 +21,7 @@ export const FileErrorBanner: FC<FileErrorBannerProps> = ({ errors, onDismiss })
         <AlertCircle className="w-5 h-5 text-destructive shrink-0 mt-0.5" aria-hidden="true" />
         <div className="space-y-1 text-sm">
           <p className="font-semibold text-foreground">
-            {errors.length === 1 ? 'Unable to add file' : `${errors.length} files could not be added`}
+            {title || (errors.length === 1 ? 'Unable to add file' : `${errors.length} files could not be added`)}
           </p>
           <ul className="list-disc list-inside space-y-1 text-xs text-muted-foreground">
             {errors.map((err, idx) => (

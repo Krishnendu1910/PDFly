@@ -18,4 +18,5 @@ export * from './operations/pdf-to-markdown';
 export * from './operations/sign';
 export * from './images';
 export * from './compression';
+export * from './operations/protect';
 

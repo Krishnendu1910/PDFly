@@ -9,6 +9,14 @@ export interface RenderThumbnailOptions {
   additionalRotation?: number;
 }
 
+export interface RenderPagePreviewResult {
+  dataUrl: string;
+  pageWidth: number;
+  pageHeight: number;
+  renderedWidth: number;
+  renderedHeight: number;
+}
+
 /**
  * Loads a PDF document in PDF.js and returns its total page count.
  */
@@ -38,15 +46,15 @@ export async function getPdfPageCount(fileOrBytes: File | Uint8Array): Promise<n
 }
 
 /**
- * Renders a specific 1-based page of a PDF file to a lightweight data URL thumbnail.
- * Cleans up all PDF.js page handles and document resources immediately to protect memory.
+ * Renders a specific 1-based page of a PDF file to a full preview result containing
+ * data URL and native PDF dimensions for responsive overlay alignment.
  */
-export async function renderPageThumbnail(
+export async function renderPagePreview(
   fileOrBytes: File | Uint8Array,
   pageNumber: number,
   options: RenderThumbnailOptions = {},
-): Promise<string> {
-  const { targetWidth = 200, additionalRotation = 0 } = options;
+): Promise<RenderPagePreviewResult> {
+  const { targetWidth = 420, additionalRotation = 0 } = options;
   const pdfjs = await getPdfJs();
   configurePdfJs(pdfjs);
 
@@ -98,18 +106,26 @@ export async function renderPageThumbnail(
 
     await renderTask.promise;
 
-    // Convert to low-memory JPEG data URL (quality 0.8)
-    const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+    // Convert to low-memory JPEG data URL (quality 0.85)
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+
+    const result: RenderPagePreviewResult = {
+      dataUrl,
+      pageWidth: unscaledViewport.width,
+      pageHeight: unscaledViewport.height,
+      renderedWidth: canvas.width,
+      renderedHeight: canvas.height,
+    };
 
     // Immediate cleanup
     canvas.width = 0;
     canvas.height = 0;
 
-    return dataUrl;
+    return result;
   } catch (err) {
     if (err instanceof PdfOperationError) throw err;
     const msg = err instanceof Error ? err.message : String(err);
-    throw new PdfOperationError('RENDER_FAILED', `Failed to render page ${pageNumber} thumbnail.`, msg);
+    throw new PdfOperationError('RENDER_FAILED', `Failed to render page ${pageNumber} preview.`, msg);
   } finally {
     try {
       page?.cleanup();
@@ -119,4 +135,17 @@ export async function renderPageThumbnail(
       // Ignore destruction errors
     }
   }
+}
+
+/**
+ * Renders a specific 1-based page of a PDF file to a lightweight data URL thumbnail.
+ * Cleans up all PDF.js page handles and document resources immediately to protect memory.
+ */
+export async function renderPageThumbnail(
+  fileOrBytes: File | Uint8Array,
+  pageNumber: number,
+  options: RenderThumbnailOptions = {},
+): Promise<string> {
+  const result = await renderPagePreview(fileOrBytes, pageNumber, options);
+  return result.dataUrl;
 }

@@ -14,6 +14,7 @@ export interface ToolTheme {
   cardHoverText: string;
   accentBorder: string;
   badgeVariant: ToolColorFamily;
+  accentBg: string;
 }
 
 const TOOL_FAMILY_MAP: Record<string, ToolColorFamily> = {
@@ -31,50 +32,58 @@ const TOOL_FAMILY_MAP: Record<string, ToolColorFamily> = {
   crop: 'amber',
   'pdf-to-markdown': 'teal',
   sign: 'violet',
+  protect: 'emerald',
 };
 
 const THEME_STYLES: Record<ToolColorFamily, Omit<ToolTheme, 'family' | 'badgeVariant'>> = {
   cobalt: {
-    iconBg: 'bg-cobalt/10 text-cobalt dark:bg-cobalt/20 dark:text-cobalt',
-    cardHoverBorder: 'group-hover:border-cobalt/40 dark:group-hover:border-cobalt/50',
-    cardHoverText: 'group-hover:text-cobalt',
+    iconBg: 'bg-cobalt/10 text-cobalt dark:bg-cobalt/20 dark:text-cobalt group-hover:bg-cobalt/15 dark:group-hover:bg-cobalt/25',
+    cardHoverBorder: 'group-hover:border-zinc-300 dark:group-hover:border-zinc-700',
+    cardHoverText: 'group-hover:text-foreground',
     accentBorder: 'border-cobalt/30',
+    accentBg: 'bg-cobalt',
   },
   vermillion: {
-    iconBg: 'bg-vermillion/10 text-vermillion dark:bg-vermillion/20 dark:text-vermillion',
-    cardHoverBorder: 'group-hover:border-vermillion/40 dark:group-hover:border-vermillion/50',
-    cardHoverText: 'group-hover:text-vermillion',
+    iconBg: 'bg-vermillion/10 text-vermillion dark:bg-vermillion/20 dark:text-vermillion group-hover:bg-vermillion/15 dark:group-hover:bg-vermillion/25',
+    cardHoverBorder: 'group-hover:border-zinc-300 dark:group-hover:border-zinc-700',
+    cardHoverText: 'group-hover:text-foreground',
     accentBorder: 'border-vermillion/30',
+    accentBg: 'bg-vermillion',
   },
   emerald: {
-    iconBg: 'bg-emerald/10 text-emerald dark:bg-emerald/20 dark:text-emerald',
-    cardHoverBorder: 'group-hover:border-emerald/40 dark:group-hover:border-emerald/50',
-    cardHoverText: 'group-hover:text-emerald',
+    iconBg: 'bg-emerald/10 text-emerald dark:bg-emerald/20 dark:text-emerald group-hover:bg-emerald/15 dark:group-hover:bg-emerald/25',
+    cardHoverBorder: 'group-hover:border-zinc-300 dark:group-hover:border-zinc-700',
+    cardHoverText: 'group-hover:text-foreground',
     accentBorder: 'border-emerald/30',
+    accentBg: 'bg-emerald',
   },
   amber: {
-    iconBg: 'bg-amber/10 text-amber dark:bg-amber/20 dark:text-amber',
-    cardHoverBorder: 'group-hover:border-amber/40 dark:group-hover:border-amber/50',
-    cardHoverText: 'group-hover:text-amber',
+    iconBg: 'bg-amber/10 text-amber dark:bg-amber/20 dark:text-amber group-hover:bg-amber/15 dark:group-hover:bg-amber/25',
+    cardHoverBorder: 'group-hover:border-zinc-300 dark:group-hover:border-zinc-700',
+    cardHoverText: 'group-hover:text-foreground',
     accentBorder: 'border-amber/30',
+    accentBg: 'bg-amber',
   },
   violet: {
-    iconBg: 'bg-violet/10 text-violet dark:bg-violet/20 dark:text-violet',
-    cardHoverBorder: 'group-hover:border-violet/40 dark:group-hover:border-violet/50',
-    cardHoverText: 'group-hover:text-violet',
+    iconBg: 'bg-violet/10 text-violet dark:bg-violet/20 dark:text-violet group-hover:bg-violet/15 dark:group-hover:bg-violet/25',
+    cardHoverBorder: 'group-hover:border-zinc-300 dark:group-hover:border-zinc-700',
+    cardHoverText: 'group-hover:text-foreground',
     accentBorder: 'border-violet/30',
+    accentBg: 'bg-violet',
   },
   coral: {
-    iconBg: 'bg-coral/10 text-coral dark:bg-coral/20 dark:text-coral',
-    cardHoverBorder: 'group-hover:border-coral/40 dark:group-hover:border-coral/50',
-    cardHoverText: 'group-hover:text-coral',
+    iconBg: 'bg-coral/10 text-coral dark:bg-coral/20 dark:text-coral group-hover:bg-coral/15 dark:group-hover:bg-coral/25',
+    cardHoverBorder: 'group-hover:border-zinc-300 dark:group-hover:border-zinc-700',
+    cardHoverText: 'group-hover:text-foreground',
     accentBorder: 'border-coral/30',
+    accentBg: 'bg-coral',
   },
   teal: {
-    iconBg: 'bg-teal/10 text-teal dark:bg-teal/20 dark:text-teal',
-    cardHoverBorder: 'group-hover:border-teal/40 dark:group-hover:border-teal/50',
-    cardHoverText: 'group-hover:text-teal',
+    iconBg: 'bg-teal/10 text-teal dark:bg-teal/20 dark:text-teal group-hover:bg-teal/15 dark:group-hover:bg-teal/25',
+    cardHoverBorder: 'group-hover:border-zinc-300 dark:group-hover:border-zinc-700',
+    cardHoverText: 'group-hover:text-foreground',
     accentBorder: 'border-teal/30',
+    accentBg: 'bg-teal',
   },
 };
 

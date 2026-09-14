@@ -51,6 +51,9 @@ const PdfToMarkdownToolPage = lazy(() =>
 const SignToolPage = lazy(() =>
   import('@/pages/tools/SignToolPage').then((m) => ({ default: m.SignToolPage })),
 );
+const ProtectToolPage = lazy(() =>
+  import('@/pages/tools/ProtectToolPage').then((m) => ({ default: m.ProtectToolPage })),
+);
 
 const loadingFallback = (
   <div className="py-24 flex flex-col items-center justify-center text-center space-y-3" role="status">
@@ -192,6 +195,14 @@ export const routes: RouteObject[] = [
             element: (
               <Suspense fallback={loadingFallback}>
                 <SignToolPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: 'protect',
+            element: (
+              <Suspense fallback={loadingFallback}>
+                <ProtectToolPage />
               </Suspense>
             ),
           },

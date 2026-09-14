@@ -8,9 +8,11 @@
     "build": "tsc --noEmit && vite build",
     "lint": "eslint .",
     "type-check": "tsc --noEmit",
-    "test": "vitest run"
+    "typecheck": "tsc --noEmit",
+    "test": "node scripts/test-runner.js"
   },
   "dependencies": {
+    "@neslinesli93/qpdf-wasm": "^0.3.0",
     "clsx": "^2.1.1",
     "framer-motion": "^12.4.7",
     "lucide-react": "^1.16.0",

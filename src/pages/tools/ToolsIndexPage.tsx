@@ -13,6 +13,7 @@ const categories: { id: ToolCategory; label: string }[] = [
   { id: 'edit', label: 'Edit' },
   { id: 'convert', label: 'Convert' },
   { id: 'optimize', label: 'Optimize' },
+  { id: 'security', label: 'Security' },
 ];
 
 export const ToolsIndexPage: FC = () => {

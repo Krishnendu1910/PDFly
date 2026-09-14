@@ -23,11 +23,14 @@ import { DownloadResultDocket, type OutputFileItem } from '@/components/download
 import { getDefaultDownloadFilename } from '@/utils/filenameUtils';
 import {
   getPdfPageCount,
+  renderPagePreview,
   addWatermarkToPdf,
   PdfOperationError,
   type WatermarkPosition,
   type WatermarkRotation,
+  type RenderPagePreviewResult,
 } from '@/lib/pdf';
+import { WatermarkLivePreview } from '@/components/pdf/WatermarkLivePreview';
 import type { FileValidationError } from '@/types/file';
 
 const WATERMARK_CONFIG = {
@@ -39,15 +42,21 @@ const WATERMARK_CONFIG = {
 export const WatermarkToolPage: FC = () => {
   useDocumentTitle(
     'Watermark PDF',
-    'Stamp custom text watermarks, draft notices, or confidentiality markers across your PDF document.',
+    'Stamp custom text watermarks, draft notices, or confidentiality markers across your PDF document with instant live preview.',
   );
 
   const [pageCount, setPageCount] = useState<number | null>(null);
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [pagePreviews, setPagePreviews] = useState<Record<number, RenderPagePreviewResult>>({});
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [previewError, setPreviewError] = useState<string | null>(null);
+
   const [watermarkText, setWatermarkText] = useState('CONFIDENTIAL');
   const [position, setPosition] = useState<WatermarkPosition>('center');
   const [rotation, setRotation] = useState<WatermarkRotation>('diagonal');
   const [opacity, setOpacity] = useState<number>(0.25);
   const [fontSize, setFontSize] = useState<number>(48);
+
   const [isProcessing, setIsProcessing] = useState(false);
   const [progressPercent, setProgressPercent] = useState(0);
   const [operationErrors, setOperationErrors] = useState<FileValidationError[]>([]);
@@ -66,11 +75,15 @@ export const WatermarkToolPage: FC = () => {
 
   const activeFile = files[0];
 
+  // Inspect page count upon file selection
   useEffect(() => {
     let isCancelled = false;
 
     if (!activeFile) {
       setPageCount(null);
+      setCurrentPage(1);
+      setPagePreviews({});
+      setPreviewError(null);
       setOutputResult(null);
       setOperationErrors([]);
       return;
@@ -78,7 +91,12 @@ export const WatermarkToolPage: FC = () => {
 
     getPdfPageCount(activeFile.file)
       .then((count) => {
-        if (!isCancelled) setPageCount(count);
+        if (!isCancelled) {
+          setPageCount(count);
+          setCurrentPage(1);
+          setPagePreviews({});
+          setPreviewError(null);
+        }
       })
       .catch((err: unknown) => {
         if (!isCancelled) {
@@ -92,6 +110,45 @@ export const WatermarkToolPage: FC = () => {
       isCancelled = true;
     };
   }, [activeFile]);
+
+  // Render preview thumbnail for the currently selected page
+  useEffect(() => {
+    let isCancelled = false;
+    if (!activeFile || !currentPage) return;
+
+    // Use cached render if already present
+    if (pagePreviews[currentPage]) {
+      return;
+    }
+
+    setPreviewLoading(true);
+    setPreviewError(null);
+
+    renderPagePreview(activeFile.file, currentPage, { targetWidth: 420 })
+      .then((result) => {
+        if (!isCancelled) {
+          setPagePreviews((prev) => ({
+            ...prev,
+            [currentPage]: result,
+          }));
+        }
+      })
+      .catch((err: unknown) => {
+        if (!isCancelled) {
+          const msg = err instanceof Error ? err.message : 'Preview generation failed';
+          setPreviewError(msg);
+        }
+      })
+      .finally(() => {
+        if (!isCancelled) {
+          setPreviewLoading(false);
+        }
+      });
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [activeFile, currentPage, pagePreviews]);
 
   const allErrors = [...pipelineErrors, ...operationErrors];
 
@@ -135,11 +192,14 @@ export const WatermarkToolPage: FC = () => {
     setOutputResult(null);
     clearFiles();
     setPageCount(null);
+    setCurrentPage(1);
+    setPagePreviews({});
+    setPreviewError(null);
   };
 
   return (
     <div className="py-10 sm:py-16">
-      <Container size="md">
+      <Container size="lg">
         {/* Navigation Breadcrumb */}
         <div className="mb-6">
           <Link
@@ -181,7 +241,7 @@ export const WatermarkToolPage: FC = () => {
           </div>
 
           <p className="pt-4 text-sm sm:text-base text-muted-foreground leading-relaxed">
-            Apply custom text stamps, confidentiality banners, or copyright markers across all pages of your PDF document. Processed entirely in browser memory.
+            Apply custom text stamps, confidentiality banners, or copyright markers across all pages of your PDF document. Processed entirely in browser memory with live visual preview.
           </p>
         </div>
 
@@ -221,165 +281,223 @@ export const WatermarkToolPage: FC = () => {
               />
             )}
 
-            {/* Selected File & Settings */}
+            {/* Selected File & Live Editor Workspace */}
             {hasFiles && activeFile && (
-              <div className="p-6 rounded-2xl border border-border bg-card shadow-xs space-y-6">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-border">
-                  <div>
-                    <h2 className="text-base font-bold text-foreground truncate max-w-sm sm:max-w-md">
-                      {activeFile.name}
-                    </h2>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      {pageCount !== null ? `${pageCount} pages` : 'Reading pages...'} &bull; {activeFile.formattedSize}
-                    </p>
-                  </div>
-
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleReset}
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                {/* Left Column: Live Visual Preview */}
+                <div className="lg:col-span-6 xl:col-span-7 order-1">
+                  <WatermarkLivePreview
+                    pagePreview={pagePreviews[currentPage] || null}
+                    loading={previewLoading}
+                    error={previewError}
+                    currentPage={currentPage}
+                    totalPages={pageCount}
+                    watermarkText={watermarkText}
+                    position={position}
+                    rotation={rotation}
+                    opacity={opacity}
+                    fontSize={fontSize}
+                    onPageChange={(p) => setCurrentPage(p)}
                     disabled={isProcessing}
-                    className="text-xs text-muted-foreground hover:text-destructive self-start sm:self-auto"
-                  >
-                    Change File
-                  </Button>
+                  />
                 </div>
 
-                {/* Configuration Options Grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 p-4 rounded-xl border border-border bg-secondary/20">
-                  {/* Watermark Text */}
-                  <div className="space-y-1.5 sm:col-span-2">
-                    <label htmlFor="watermark-text-input" className="text-xs font-semibold uppercase tracking-wider text-foreground block">
-                      Watermark Text
-                    </label>
-                    <input
-                      id="watermark-text-input"
-                      type="text"
-                      value={watermarkText}
-                      onChange={(e) => setWatermarkText(e.target.value)}
-                      placeholder="e.g. CONFIDENTIAL, DRAFT, NOT FOR DISTRIBUTION"
-                      className="w-full px-3.5 py-2 rounded-lg border border-border bg-background text-foreground text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary"
-                    />
+                {/* Right Column: Configuration Controls */}
+                <div className="lg:col-span-6 xl:col-span-5 order-2 p-6 rounded-2xl border border-border bg-card shadow-xs space-y-6">
+                  {/* Selected File Bar */}
+                  <div className="flex items-center justify-between gap-4 pb-4 border-b border-border">
+                    <div className="truncate">
+                      <h2 className="text-base font-bold text-foreground truncate">
+                        {activeFile.name}
+                      </h2>
+                      <p className="text-xs text-muted-foreground mt-0.5 font-mono">
+                        {pageCount !== null ? `${pageCount} pages` : 'Reading pages...'} &bull; {activeFile.formattedSize}
+                      </p>
+                    </div>
+
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleReset}
+                      disabled={isProcessing}
+                      className="text-xs text-muted-foreground hover:text-destructive shrink-0"
+                    >
+                      Change File
+                    </Button>
                   </div>
 
-                  {/* Position Selector */}
-                  <div className="space-y-2">
-                    <label className="text-xs font-semibold uppercase tracking-wider text-foreground block">
-                      Position
-                    </label>
-                    <div className="grid grid-cols-3 gap-1.5 p-1 rounded-lg border border-border bg-background">
-                      {(
-                        [
-                          ['top', 'Top'],
-                          ['center', 'Center'],
-                          ['bottom', 'Bottom'],
-                        ] as [WatermarkPosition, string][]
-                      ).map(([posKey, posLabel]) => (
+                  {/* Watermark Controls Group */}
+                  <div className="space-y-5">
+                    {/* Watermark Text Input */}
+                    <div className="space-y-1.5">
+                      <label
+                        htmlFor="watermark-text-input"
+                        className="text-xs font-semibold uppercase tracking-wider text-foreground block"
+                      >
+                        Watermark Text
+                      </label>
+                      <input
+                        id="watermark-text-input"
+                        type="text"
+                        value={watermarkText}
+                        onChange={(e) => setWatermarkText(e.target.value)}
+                        placeholder="e.g. CONFIDENTIAL, DRAFT, DO NOT COPY"
+                        disabled={isProcessing}
+                        className="w-full px-3.5 py-2.5 rounded-lg border border-border bg-background text-foreground text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary"
+                      />
+                    </div>
+
+                    {/* Orientation Selector */}
+                    <div className="space-y-2">
+                      <label className="text-xs font-semibold uppercase tracking-wider text-foreground block">
+                        Orientation
+                      </label>
+                      <div className="grid grid-cols-2 gap-1.5 p-1 rounded-lg border border-border bg-muted/30">
                         <button
-                          key={posKey}
                           type="button"
-                          onClick={() => setPosition(posKey)}
-                          className={`py-2 px-2 text-xs font-medium rounded transition-all text-center ${
-                            position === posKey
-                              ? 'bg-primary text-primary-foreground shadow-xs'
-                              : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                          disabled={isProcessing}
+                          onClick={() => setRotation('diagonal')}
+                          className={`py-2 px-3 text-xs font-medium rounded transition-all text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+                            rotation === 'diagonal'
+                              ? 'bg-primary text-primary-foreground shadow-xs font-semibold'
+                              : 'text-muted-foreground hover:text-foreground hover:bg-muted/60'
                           }`}
                         >
-                          {posLabel}
+                          Diagonal (45°)
                         </button>
-                      ))}
+                        <button
+                          type="button"
+                          disabled={isProcessing}
+                          onClick={() => setRotation('horizontal')}
+                          className={`py-2 px-3 text-xs font-medium rounded transition-all text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+                            rotation === 'horizontal'
+                              ? 'bg-primary text-primary-foreground shadow-xs font-semibold'
+                              : 'text-muted-foreground hover:text-foreground hover:bg-muted/60'
+                          }`}
+                        >
+                          Horizontal (0°)
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Position Selector (active when horizontal or indicator) */}
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs font-semibold uppercase tracking-wider text-foreground block">
+                          Position
+                        </label>
+                        {rotation === 'diagonal' && (
+                          <span className="text-[10px] text-muted-foreground font-mono">
+                            Centered on diagonal
+                          </span>
+                        )}
+                      </div>
+                      <div className="grid grid-cols-3 gap-1.5 p-1 rounded-lg border border-border bg-muted/30">
+                        {(
+                          [
+                            ['top', 'Top'],
+                            ['center', 'Center'],
+                            ['bottom', 'Bottom'],
+                          ] as [WatermarkPosition, string][]
+                        ).map(([posKey, posLabel]) => (
+                          <button
+                            key={posKey}
+                            type="button"
+                            disabled={isProcessing || rotation === 'diagonal'}
+                            onClick={() => setPosition(posKey)}
+                            className={`py-2 px-2 text-xs font-medium rounded transition-all text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+                              position === posKey && rotation === 'horizontal'
+                                ? 'bg-primary text-primary-foreground shadow-xs font-semibold'
+                                : rotation === 'diagonal' && posKey === 'center'
+                                ? 'bg-muted text-foreground font-semibold'
+                                : 'text-muted-foreground hover:text-foreground hover:bg-muted/60'
+                            } ${rotation === 'diagonal' && posKey !== 'center' ? 'opacity-40 cursor-not-allowed' : ''}`}
+                          >
+                            {posLabel}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Opacity Slider */}
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between text-xs">
+                        <label
+                          htmlFor="watermark-opacity-range"
+                          className="font-semibold uppercase tracking-wider text-foreground"
+                        >
+                          Opacity
+                        </label>
+                        <span className="font-mono text-muted-foreground font-medium">
+                          {Math.round(opacity * 100)}%
+                        </span>
+                      </div>
+                      <input
+                        id="watermark-opacity-range"
+                        type="range"
+                        min="0.05"
+                        max="0.8"
+                        step="0.05"
+                        value={opacity}
+                        disabled={isProcessing}
+                        aria-valuemin={5}
+                        aria-valuemax={80}
+                        aria-valuenow={Math.round(opacity * 100)}
+                        aria-label="Watermark opacity"
+                        onChange={(e) => setOpacity(parseFloat(e.target.value))}
+                        className="w-full accent-primary h-2 bg-muted rounded-lg cursor-pointer"
+                      />
+                    </div>
+
+                    {/* Font Size Slider */}
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between text-xs">
+                        <label
+                          htmlFor="watermark-font-size-range"
+                          className="font-semibold uppercase tracking-wider text-foreground"
+                        >
+                          Font Size
+                        </label>
+                        <span className="font-mono text-muted-foreground font-medium">
+                          {fontSize} pt
+                        </span>
+                      </div>
+                      <input
+                        id="watermark-font-size-range"
+                        type="range"
+                        min="20"
+                        max="72"
+                        value={fontSize}
+                        disabled={isProcessing}
+                        aria-valuemin={20}
+                        aria-valuemax={72}
+                        aria-valuenow={fontSize}
+                        aria-label="Watermark font size in points"
+                        onChange={(e) => setFontSize(parseInt(e.target.value, 10))}
+                        className="w-full accent-primary h-2 bg-muted rounded-lg cursor-pointer"
+                      />
                     </div>
                   </div>
 
-                  {/* Rotation Selector */}
-                  <div className="space-y-2">
-                    <label className="text-xs font-semibold uppercase tracking-wider text-foreground block">
-                      Orientation
-                    </label>
-                    <div className="grid grid-cols-2 gap-1.5 p-1 rounded-lg border border-border bg-background">
-                      <button
-                        type="button"
-                        onClick={() => setRotation('diagonal')}
-                        className={`py-2 px-2 text-xs font-medium rounded transition-all text-center ${
-                          rotation === 'diagonal'
-                            ? 'bg-primary text-primary-foreground shadow-xs'
-                            : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
-                        }`}
-                      >
-                        Diagonal (45°)
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setRotation('horizontal')}
-                        className={`py-2 px-2 text-xs font-medium rounded transition-all text-center ${
-                          rotation === 'horizontal'
-                            ? 'bg-primary text-primary-foreground shadow-xs'
-                            : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
-                        }`}
-                      >
-                        Horizontal (0°)
-                      </button>
+                  {/* Action Bar */}
+                  <div className="pt-4 border-t border-border space-y-3">
+                    <div className="text-xs text-muted-foreground flex items-center gap-1.5">
+                      <CheckCircle2 className="w-4 h-4 text-emerald shrink-0" aria-hidden="true" />
+                      <span>
+                        Applies &quot;{watermarkText.trim() || 'watermark'}&quot; across {pageCount ? `${pageCount} pages` : 'document'}.
+                      </span>
                     </div>
-                  </div>
 
-                  {/* Opacity Slider */}
-                  <div className="space-y-1.5">
-                    <div className="flex items-center justify-between text-xs">
-                      <label htmlFor="watermark-opacity-range" className="font-semibold uppercase tracking-wider text-foreground">
-                        Opacity
-                      </label>
-                      <span className="font-mono text-muted-foreground">{Math.round(opacity * 100)}%</span>
-                    </div>
-                    <input
-                      id="watermark-opacity-range"
-                      type="range"
-                      min="0.05"
-                      max="0.8"
-                      step="0.05"
-                      value={opacity}
-                      onChange={(e) => setOpacity(parseFloat(e.target.value))}
-                      className="w-full accent-primary h-2 bg-muted rounded-lg cursor-pointer"
-                    />
+                    <Button
+                      size="lg"
+                      disabled={isProcessing || !watermarkText.trim() || !activeFile}
+                      onClick={handleApplyWatermark}
+                      className="w-full shadow-sm"
+                    >
+                      <span>Apply Watermark</span>
+                      <ArrowRight className="w-4 h-4 ml-2" aria-hidden="true" />
+                    </Button>
                   </div>
-
-                  {/* Font Size Slider */}
-                  <div className="space-y-1.5">
-                    <div className="flex items-center justify-between text-xs">
-                      <label htmlFor="watermark-font-size-range" className="font-semibold uppercase tracking-wider text-foreground">
-                        Font Size
-                      </label>
-                      <span className="font-mono text-muted-foreground">{fontSize} pt</span>
-                    </div>
-                    <input
-                      id="watermark-font-size-range"
-                      type="range"
-                      min="20"
-                      max="72"
-                      value={fontSize}
-                      onChange={(e) => setFontSize(parseInt(e.target.value))}
-                      className="w-full accent-primary h-2 bg-muted rounded-lg cursor-pointer"
-                    />
-                  </div>
-                </div>
-
-                {/* Conversion Trigger Bar */}
-                <div className="pt-4 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-4">
-                  <div className="text-xs text-muted-foreground">
-                    <span className="text-emerald-600 dark:text-emerald-400 font-medium flex items-center gap-1.5">
-                      <CheckCircle2 className="w-4 h-4 inline" aria-hidden="true" />
-                      Ready to apply &quot;{watermarkText.trim()}&quot; across {pageCount || 'all'} pages.
-                    </span>
-                  </div>
-
-                  <Button
-                    size="lg"
-                    disabled={isProcessing || !watermarkText.trim() || pageCount === null}
-                    onClick={handleApplyWatermark}
-                    className="w-full sm:w-auto shadow-sm"
-                  >
-                    <span>Apply Watermark</span>
-                    <ArrowRight className="w-4 h-4 ml-2" aria-hidden="true" />
-                  </Button>
                 </div>
               </div>
             )}
@@ -388,7 +506,7 @@ export const WatermarkToolPage: FC = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Card className="border-border bg-card">
                 <CardContent className="p-5 flex items-start gap-3">
-                  <ShieldCheck className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" aria-hidden="true" />
+                  <ShieldCheck className="w-5 h-5 text-emerald shrink-0 mt-0.5" aria-hidden="true" />
                   <div>
                     <h3 className="text-sm font-semibold text-foreground">100% Client-Side Stamping</h3>
                     <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
@@ -402,9 +520,9 @@ export const WatermarkToolPage: FC = () => {
                 <CardContent className="p-5 flex items-start gap-3">
                   <Zap className="w-5 h-5 text-primary shrink-0 mt-0.5" aria-hidden="true" />
                   <div>
-                    <h3 className="text-sm font-semibold text-foreground">Alpha Transparency</h3>
+                    <h3 className="text-sm font-semibold text-foreground">Live Layout Preview</h3>
                     <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
-                      Embedded text elements use standard PDF Extended Graphics States to ensure background document text remains readable.
+                      Real-time visual overlay synchronizes text placement, scaling, and opacity directly over your document pages before generating.
                     </p>
                   </div>
                 </CardContent>
@@ -424,4 +542,3 @@ export const WatermarkToolPage: FC = () => {
     </div>
   );
 };
-

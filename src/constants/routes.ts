@@ -17,6 +17,7 @@ export const ROUTES = {
   TOOL_CROP: '/tools/crop',
   TOOL_PDF_TO_MARKDOWN: '/tools/pdf-to-markdown',
   TOOL_SIGN: '/tools/sign',
+  TOOL_PROTECT: '/tools/protect',
   TOOL_DETAIL: (slug: string) => `/tools/${slug}`,
 } as const;
 

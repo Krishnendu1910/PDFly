@@ -9,7 +9,10 @@ export type PdfErrorCode =
   | 'RENDER_FAILED'
   | 'PROCESSING_FAILED'
   | 'ENGINE_LOAD_FAILED'
-  | 'LIMIT_EXCEEDED';
+  | 'LIMIT_EXCEEDED'
+  | 'INCORRECT_PASSWORD'
+  | 'NOT_ENCRYPTED'
+  | 'ALREADY_PROTECTED';
 
 export class PdfOperationError extends Error {
   readonly code: PdfErrorCode;

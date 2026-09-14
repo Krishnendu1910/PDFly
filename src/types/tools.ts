@@ -14,18 +14,20 @@ export type ToolId =
   | 'watermark'
   | 'crop'
   | 'pdf-to-markdown'
-  | 'sign';
+  | 'sign'
+  | 'protect';
 
-export type ToolCategory = 'all' | 'organize' | 'convert' | 'optimize' | 'edit';
+export type ToolCategory = 'all' | 'organize' | 'convert' | 'optimize' | 'edit' | 'security';
 
 export interface ToolDefinition {
   id: ToolId;
   slug: string;
   name: string;
   description: string;
+  shortDescription?: string;
   iconName: string;
   icon: LucideIcon;
-  category: 'organize' | 'convert' | 'optimize' | 'edit';
+  category: 'organize' | 'convert' | 'optimize' | 'edit' | 'security';
   badge?: string;
   popular?: boolean;
 }
