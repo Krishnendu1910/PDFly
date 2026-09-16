@@ -25,6 +25,12 @@ export const COMPRESSION_PROFILES: Record<
     label: 'Strong',
     description: 'Maximum size reduction for email attachments and uploads. Accepts visible image compression.',
   },
+  target: {
+    maxDimension: 1600,
+    jpegQuality: 0.72,
+    label: 'Target Size',
+    description: 'Specify maximum desired output file size. PDFly progressively optimizes streams to meet your target.',
+  },
 };
 
 /**
@@ -145,46 +151,33 @@ async function recompressJpegBytes(
   return null;
 }
 
+interface CompressionPassParams {
+  maxDimension: number;
+  jpegQuality: number;
+}
+
+const TARGET_PASSES: readonly CompressionPassParams[] = [
+  { maxDimension: 1800, jpegQuality: 0.78 }, // Pass 1: Light/Balanced
+  { maxDimension: 1200, jpegQuality: 0.60 }, // Pass 2: Medium/Strong
+  { maxDimension: 900, jpegQuality: 0.45 },  // Pass 3: Aggressive
+  { maxDimension: 640, jpegQuality: 0.35 },  // Pass 4: Maximum safe reduction
+] as const;
+
 /**
- * Compresses a PDF document client-side by:
- * 1. Recompressing and downscaling embedded JPEG streams without rasterizing text or vectors.
- * 2. Consolidating PDF object streams (useObjectStreams: true).
- * 3. Measuring byte savings truthfully (never claiming compression if output is equal or larger).
+ * Runs a single compression pass on the PDF bytes using specified dimension and JPEG quality limits.
  */
-export async function compressPdfDocument(
+async function runCompressionPass(
   pdfBytes: Uint8Array,
-  options: CompressionOptions = {},
-): Promise<CompressionResult> {
-  const mode = options.mode ?? 'balanced';
-  const profile = COMPRESSION_PROFILES[mode];
-
-  options.onProgress?.('Analyzing document structure...', 10);
-
-  // 1. Detect characteristics
-  const characteristics = await detectPdfCharacteristics(pdfBytes);
-
+  params: CompressionPassParams,
+  onProgress?: (stage: string, percent: number) => void,
+  progressStart = 15,
+  progressSpan = 70,
+): Promise<{ outputBytes: Uint8Array; recompressedImageCount: number }> {
   const { PDFDocument, PDFName, PDFNumber, PDFRawStream } = await getPdfLib();
 
-  let doc;
-  try {
-    doc = await PDFDocument.load(pdfBytes);
-    doc = await PDFDocument.load(pdfBytes, { ignoreEncryption: false });
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    if (msg.toLowerCase().includes('encrypt') || msg.toLowerCase().includes('password')) {
-      throw new PdfOperationError(
-        'ENCRYPTED_PDF',
-        'Cannot compress encrypted or password-protected PDF files.',
-      );
-    }
-    throw new PdfOperationError(
-      'INVALID_PDF',
-      'The provided file is not a valid PDF document.',
-      msg,
-    );
-  }
+  const doc = await PDFDocument.load(pdfBytes, { ignoreEncryption: false });
 
-  // 2. Identify Image XObjects
+  // Identify Image XObjects
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const imageObjects: { ref: any; obj: any }[] = [];
   for (const [ref, obj] of doc.context.enumerateIndirectObjects()) {
@@ -200,24 +193,18 @@ export async function compressPdfDocument(
     }
   }
 
-  // 3. Recompress image streams sequentially
+  let recompressedImageCount = 0;
   const totalImages = imageObjects.length;
+
   for (let i = 0; i < totalImages; i++) {
     const { ref, obj } = imageObjects[i]!;
-    const pct = Math.round(15 + ((i + 1) / Math.max(1, totalImages)) * 60);
-    options.onProgress?.(`Optimizing image ${i + 1} of ${totalImages}...`, pct);
+    const pct = Math.round(progressStart + ((i + 1) / Math.max(1, totalImages)) * progressSpan);
+    onProgress?.(`Optimizing image ${i + 1} of ${totalImages}...`, pct);
 
-    // Check if image is DCTDecode (JPEG)
     const dict = obj.dict;
     const filter = dict.get(PDFName.of('Filter'));
     if (filter && filter.toString() === '/DCTDecode') {
-      // Check for /SMask or /Mask:
-      // If a mask exists, downscaling dimensions would desynchronize the mask and corrupt rendering
       const hasMask = dict.has(PDFName.of('SMask')) || dict.has(PDFName.of('Mask'));
-
-      // Check ColorSpace:
-      // Only recompress when ColorSpace is standard /DeviceRGB, /DeviceGray, or omitted.
-      // If /DeviceCMYK, /Indexed, /Separation, or /DeviceN, preserve the original stream.
       const colorSpaceObj = dict.get(PDFName.of('ColorSpace'));
       const colorSpaceStr = colorSpaceObj ? colorSpaceObj.toString() : '/DeviceRGB';
       const isSafeColorSpace =
@@ -231,18 +218,14 @@ export async function compressPdfDocument(
 
       const rawStreamBytes = typeof obj.getContents === 'function' ? obj.getContents() : null;
       if (rawStreamBytes && rawStreamBytes.length > 2000) {
-        // If hasMask, do not downscale dimensions beyond 8192px safe canvas limit to preserve mask synchronization
-        const effectiveMaxDim = hasMask ? 8192 : profile.maxDimension;
-
+        const effectiveMaxDim = hasMask ? 8192 : params.maxDimension;
         const recompressed = await recompressJpegBytes(
           rawStreamBytes,
           effectiveMaxDim,
-          profile.jpegQuality,
+          params.jpegQuality,
         );
 
         if (recompressed && recompressed.bytes.length < rawStreamBytes.length) {
-          // Recompressed output is smaller! Update dictionary and assign stream
-          // Construct replacement dictionary preserving required properties
           const newDict = dict.clone();
           newDict.set(PDFName.of('Type'), PDFName.of('XObject'));
           newDict.set(PDFName.of('Subtype'), PDFName.of('Image'));
@@ -251,32 +234,190 @@ export async function compressPdfDocument(
           newDict.set(PDFName.of('Width'), PDFNumber.of(recompressed.width));
           newDict.set(PDFName.of('Height'), PDFNumber.of(recompressed.height));
           newDict.set(PDFName.of('ColorSpace'), PDFName.of('DeviceRGB'));
-
-          // Remove Length from dict so PDFRawStream computes it dynamically
           newDict.delete(PDFName.of('Length'));
 
           const newStream = PDFRawStream.of(newDict, recompressed.bytes);
           doc.context.assign(ref, newStream);
+          recompressedImageCount++;
         }
       }
     }
 
-    // Cooperative yield
     await new Promise((resolve) => setTimeout(resolve, 0));
   }
 
-  options.onProgress?.('Consolidating PDF object streams...', 85);
+  const outputBytes = await doc.save({ useObjectStreams: true });
+  return { outputBytes, recompressedImageCount };
+}
 
-  // 4. Save with useObjectStreams: true
-  const compressedBytes = await doc.save({ useObjectStreams: true });
+/**
+ * Compresses a PDF document client-side by:
+ * 1. Recompressing and downscaling embedded JPEG streams without rasterizing text or vectors.
+ * 2. Consolidating PDF object streams (useObjectStreams: true).
+ * 3. Measuring byte savings truthfully (never claiming compression if output is equal or larger).
+ * 4. Progressively adapting compression settings when target size mode is requested.
+ */
+export async function compressPdfDocument(
+  pdfBytes: Uint8Array,
+  options: CompressionOptions = {},
+): Promise<CompressionResult> {
+  const mode = options.mode ?? 'balanced';
+  options.onProgress?.('Analyzing document structure...', 10);
+
+  // 1. Detect characteristics
+  const characteristics = await detectPdfCharacteristics(pdfBytes);
+
+  // Verify encryption before processing
+  const { PDFDocument } = await getPdfLib();
+  try {
+    await PDFDocument.load(pdfBytes, { ignoreEncryption: false });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    if (msg.toLowerCase().includes('encrypt') || msg.toLowerCase().includes('password')) {
+      throw new PdfOperationError(
+        'ENCRYPTED_PDF',
+        'Cannot compress encrypted or password-protected PDF files.',
+      );
+    }
+    throw new PdfOperationError(
+      'INVALID_PDF',
+      'The provided file is not a valid PDF document.',
+      msg,
+    );
+  }
+
+  const originalSize = pdfBytes.length;
+
+  if (mode === 'target') {
+    const targetSizeBytes = options.targetSizeBytes;
+    const isTargetValid =
+      typeof targetSizeBytes === 'number' &&
+      Number.isFinite(targetSizeBytes) &&
+      targetSizeBytes > 0;
+    const effectiveTarget = isTargetValid ? targetSizeBytes : originalSize;
+
+    // If target >= original size, run a single light/balanced pass without aggressive downsampling
+    if (effectiveTarget >= originalSize) {
+      options.onProgress?.('Optimizing document structure...', 30);
+      const { outputBytes } = await runCompressionPass(
+        pdfBytes,
+        { maxDimension: 1800, jpegQuality: 0.78 },
+        options.onProgress,
+        30,
+        55,
+      );
+
+      options.onProgress?.('Finalizing compressed output...', 95);
+      const isReduced = outputBytes.length < originalSize;
+      const compressedSize = isReduced ? outputBytes.length : originalSize;
+      const bytesSaved = isReduced ? originalSize - compressedSize : 0;
+      const percentSaved = isReduced
+        ? parseFloat(((bytesSaved / originalSize) * 100).toFixed(1))
+        : 0;
+      options.onProgress?.('Complete', 100);
+
+      return {
+        originalBytes: originalSize,
+        compressedBytes: compressedSize,
+        bytesSaved,
+        percentSaved,
+        mode: 'target',
+        isReduced,
+        characteristics,
+        outputBytes: isReduced ? outputBytes : pdfBytes,
+        targetSizeBytes: effectiveTarget,
+        targetReached: compressedSize <= effectiveTarget,
+      };
+    }
+
+    // Target < original size: Progressive iterative search (max 4 attempts)
+    let bestOutput: Uint8Array | null = null;
+    let bestSize = originalSize;
+    const maxPasses = TARGET_PASSES.length; // 4
+
+    for (let passIndex = 0; passIndex < maxPasses; passIndex++) {
+      const passConfig = TARGET_PASSES[passIndex]!;
+      const passNum = passIndex + 1;
+      const progressBase = Math.round(15 + (passIndex / maxPasses) * 75);
+      const progressSpan = Math.round(75 / maxPasses);
+
+      options.onProgress?.(
+        `Attempt ${passNum} of ${maxPasses}: Optimizing document...`,
+        progressBase,
+      );
+
+      const { outputBytes, recompressedImageCount } = await runCompressionPass(
+        pdfBytes,
+        passConfig,
+        options.onProgress,
+        progressBase,
+        progressSpan,
+      );
+
+      if (outputBytes.length < bestSize) {
+        bestSize = outputBytes.length;
+        bestOutput = outputBytes;
+      }
+
+      // Early exit 1: Target reached
+      if (bestSize <= effectiveTarget) {
+        break;
+      }
+
+      // Early exit 2: If Pass 1 had 0 recompressed images, further downsampling passes cannot reduce stream sizes
+      if (passIndex === 0 && recompressedImageCount === 0) {
+        break;
+      }
+
+      // Early exit 3: Diminishing returns between Pass 1 and Pass 2 (< 0.5% of original size)
+      if (passIndex === 1 && bestOutput) {
+        const delta = originalSize - bestSize;
+        if (delta < originalSize * 0.005) {
+          break;
+        }
+      }
+    }
+
+    options.onProgress?.('Finalizing compressed output...', 98);
+    const isReduced = bestOutput !== null && bestSize < originalSize;
+    const finalBytes = isReduced && bestOutput ? bestOutput : pdfBytes;
+    const compressedBytes = isReduced ? bestSize : originalSize;
+    const bytesSaved = isReduced ? originalSize - compressedBytes : 0;
+    const percentSaved = isReduced
+      ? parseFloat(((bytesSaved / originalSize) * 100).toFixed(1))
+      : 0;
+    const targetReached = compressedBytes <= effectiveTarget;
+
+    options.onProgress?.('Complete', 100);
+
+    return {
+      originalBytes: originalSize,
+      compressedBytes,
+      bytesSaved,
+      percentSaved,
+      mode: 'target',
+      isReduced,
+      characteristics,
+      outputBytes: finalBytes,
+      targetSizeBytes: effectiveTarget,
+      targetReached,
+    };
+  }
+
+  // Standard Presets: Quality, Balanced, Strong
+  const profile = COMPRESSION_PROFILES[mode];
+  const { outputBytes } = await runCompressionPass(
+    pdfBytes,
+    { maxDimension: profile.maxDimension, jpegQuality: profile.jpegQuality },
+    options.onProgress,
+    15,
+    70,
+  );
 
   options.onProgress?.('Finalizing compressed output...', 98);
-
-  // 5. Compare sizes truthfully
-  const originalSize = pdfBytes.length;
-  const compressedSize = compressedBytes.length;
-  const isReduced = compressedSize < originalSize;
-  const bytesSaved = isReduced ? originalSize - compressedSize : 0;
+  const isReduced = outputBytes.length < originalSize;
+  const compressedBytes = isReduced ? outputBytes.length : originalSize;
+  const bytesSaved = isReduced ? originalSize - compressedBytes : 0;
   const percentSaved = isReduced
     ? parseFloat(((bytesSaved / originalSize) * 100).toFixed(1))
     : 0;
@@ -285,12 +426,12 @@ export async function compressPdfDocument(
 
   return {
     originalBytes: originalSize,
-    compressedBytes: isReduced ? compressedSize : originalSize,
+    compressedBytes,
     bytesSaved,
     percentSaved,
     mode,
     isReduced,
     characteristics,
-    outputBytes: isReduced ? compressedBytes : pdfBytes,
+    outputBytes: isReduced ? outputBytes : pdfBytes,
   };
 }

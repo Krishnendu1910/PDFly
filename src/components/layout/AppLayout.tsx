@@ -3,6 +3,7 @@ import { Outlet, useLocation, useNavigationType } from 'react-router-dom';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { SkipLink } from '@/components/layout/SkipLink';
+import { MobileQuickTools } from '@/components/common/MobileQuickTools';
 
 export const AppLayout: FC = () => {
   const location = useLocation();
@@ -39,6 +40,7 @@ export const AppLayout: FC = () => {
         <Outlet />
       </main>
       <Footer />
+      <MobileQuickTools />
     </div>
   );
 };

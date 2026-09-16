@@ -1,13 +1,13 @@
 import { useState, useEffect, type FC } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  Stamp,
+  ToolIcon,
   ArrowLeft,
   ArrowRight,
   ShieldCheck,
-  Zap,
-  CheckCircle2,
-} from 'lucide-react';
+  Lightning,
+  CheckCircle,
+} from '@/components/icons';
 import { ROUTES } from '@/constants/routes';
 import { PDF_ONLY_CONFIG } from '@/constants/file';
 import { useFilePipeline } from '@/hooks/useFilePipeline';
@@ -216,13 +216,10 @@ export const WatermarkToolPage: FC = () => {
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-6 border-b border-border">
             <div className="flex items-center gap-4">
               <div className="w-14 h-14 rounded-xl bg-violet/10 text-violet dark:bg-violet/20 dark:text-violet flex items-center justify-center shrink-0">
-                <Stamp className="w-7 h-7" aria-hidden="true" />
+                <ToolIcon toolId="watermark" className="w-7 h-7" weight="duotone" aria-hidden="true" />
               </div>
               <div>
                 <div className="flex items-center gap-2 mb-1">
-                  <Badge variant="success" size="sm">
-                    Client-Side Engine Active
-                  </Badge>
                   <Badge variant="outline" size="sm">
                     Edit
                   </Badge>
@@ -263,7 +260,6 @@ export const WatermarkToolPage: FC = () => {
           <DownloadResultDocket
             outputs={[outputResult]}
             toolName="Watermarked Document"
-            toolIdentifier="[TOOL // 10 · TEXT STAMPER]"
             onBackToEditing={() => setOutputResult(null)}
             onReset={handleReset}
           />
@@ -482,7 +478,7 @@ export const WatermarkToolPage: FC = () => {
                   {/* Action Bar */}
                   <div className="pt-4 border-t border-border space-y-3">
                     <div className="text-xs text-muted-foreground flex items-center gap-1.5">
-                      <CheckCircle2 className="w-4 h-4 text-emerald shrink-0" aria-hidden="true" />
+                      <CheckCircle className="w-4 h-4 text-emerald shrink-0" aria-hidden="true" />
                       <span>
                         Applies &quot;{watermarkText.trim() || 'watermark'}&quot; across {pageCount ? `${pageCount} pages` : 'document'}.
                       </span>
@@ -518,7 +514,7 @@ export const WatermarkToolPage: FC = () => {
 
               <Card className="border-border bg-card">
                 <CardContent className="p-5 flex items-start gap-3">
-                  <Zap className="w-5 h-5 text-primary shrink-0 mt-0.5" aria-hidden="true" />
+                  <Lightning className="w-5 h-5 text-primary shrink-0 mt-0.5" aria-hidden="true" />
                   <div>
                     <h3 className="text-sm font-semibold text-foreground">Live Layout Preview</h3>
                     <p className="text-xs text-muted-foreground mt-1 leading-relaxed">

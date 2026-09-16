@@ -1,5 +1,5 @@
 import { type FC, useEffect, useRef } from 'react';
-import { Loader2 } from 'lucide-react';
+import { CircleNotch } from '@/components/icons';
 
 export interface ProcessingOverlayProps {
   isOpen: boolean;
@@ -78,7 +78,7 @@ export const ProcessingOverlay: FC<ProcessingOverlayProps> = ({
     >
       <div className="w-full max-w-sm rounded-2xl border border-border bg-card p-6 shadow-xl text-center space-y-4 animate-in zoom-in-95 duration-150 motion-reduce:animate-none">
         <div className="w-12 h-12 rounded-full bg-primary/10 text-primary flex items-center justify-center mx-auto">
-          <Loader2 className="w-6 h-6 animate-spin motion-reduce:animate-none" aria-hidden="true" />
+          <CircleNotch className="w-6 h-6 animate-spin motion-reduce:animate-none" aria-hidden="true" />
         </div>
 
         <div className="space-y-1">

@@ -1,6 +1,6 @@
 import type { FC } from "react";
 import { Link } from "react-router-dom";
-import { FileText } from "lucide-react";
+import { FileText } from "@/components/icons";
 import { ROUTES } from "@/constants/routes";
 
 export const Footer: FC = () => {

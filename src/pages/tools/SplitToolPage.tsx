@@ -1,6 +1,6 @@
 import { useState, useEffect, type FC } from 'react';
 import { Link } from 'react-router-dom';
-import { Scissors, ArrowLeft, ArrowRight, ShieldCheck, Zap, FileText } from 'lucide-react';
+import { ToolIcon, ArrowLeft, ArrowRight, ShieldCheck, Lightning, FileText } from '@/components/icons';
 import { ROUTES } from '@/constants/routes';
 import { PDF_ONLY_CONFIG } from '@/constants/file';
 import { useFilePipeline } from '@/hooks/useFilePipeline';
@@ -90,7 +90,7 @@ export const SplitToolPage: FC = () => {
     };
   }, [activeFile]);
 
-  const [processingStatus, setProcessingStatus] = useState<string>('Generating your split document in browser memory. Please wait...');
+  const [processingStatus, setProcessingStatus] = useState<string>('Generating your split document. Please wait...');
 
   const allErrors = [...pipelineErrors, ...operationErrors];
 
@@ -166,7 +166,7 @@ export const SplitToolPage: FC = () => {
     } finally {
       setIsProcessing(false);
       setProgressPercent(0);
-      setProcessingStatus('Generating your split document in browser memory. Please wait...');
+      setProcessingStatus('Generating your split document. Please wait...');
     }
   };
 
@@ -189,13 +189,10 @@ export const SplitToolPage: FC = () => {
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-6 border-b border-border">
             <div className="flex items-center gap-4">
               <div className="w-14 h-14 rounded-xl bg-vermillion/10 text-vermillion dark:bg-vermillion/20 dark:text-vermillion flex items-center justify-center shrink-0">
-                <Scissors className="w-7 h-7" aria-hidden="true" />
+                <ToolIcon toolId="split" className="w-7 h-7" weight="duotone" aria-hidden="true" />
               </div>
               <div>
                 <div className="flex items-center gap-2 mb-1">
-                  <Badge variant="success" size="sm">
-                    Client-Side Engine Active
-                  </Badge>
                   <Badge variant="outline" size="sm">
                     Organize
                   </Badge>
@@ -236,7 +233,6 @@ export const SplitToolPage: FC = () => {
           <DownloadResultDocket
             outputs={splitOutputs}
             toolName="Split Document"
-            toolIdentifier="[TOOL // 02 · RANGE SEPARATOR]"
             isSplitBatch={splitOutputs.length > 1}
             onBackToEditing={() => setSplitOutputs(null)}
             onReset={() => {
@@ -350,7 +346,7 @@ export const SplitToolPage: FC = () => {
 
             <Card className="border-border bg-card">
               <CardContent className="p-5 flex items-start gap-3">
-                <Zap className="w-5 h-5 text-primary shrink-0 mt-0.5" aria-hidden="true" />
+                <Lightning className="w-5 h-5 text-primary shrink-0 mt-0.5" aria-hidden="true" />
                 <div>
                   <h3 className="text-sm font-semibold text-foreground">Lossless Extraction</h3>
                   <p className="text-xs text-muted-foreground mt-1 leading-relaxed">

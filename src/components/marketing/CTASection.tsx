@@ -1,6 +1,6 @@
 import { type FC } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, FileText } from 'lucide-react';
+import { ArrowRight, FileText } from '@/components/icons';
 import { ROUTES } from '@/constants/routes';
 import { Button } from '@/components/ui/Button';
 

@@ -106,8 +106,8 @@
 
   body {
     margin: 0;
+    font-family: 'Manrope', system-ui, -apple-system, sans-serif;
     line-height: 1.5;
-    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
     overflow-x: hidden;
     min-height: 100vh;
     background-color: hsl(var(--background));

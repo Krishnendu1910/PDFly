@@ -1,5 +1,13 @@
 import { type FC, type DragEvent } from 'react';
-import { RotateCw, RotateCcw, ArrowLeft, ArrowRight, Trash2, Check, GripVertical } from 'lucide-react';
+import {
+  ArrowClockwise,
+  ArrowCounterClockwise,
+  ArrowLeft,
+  ArrowRight,
+  Trash,
+  Check,
+  DotsSixVertical,
+} from '@/components/icons';
 import { Badge } from '@/components/ui/Badge';
 import { cn } from '@/lib/utils/cn';
 import type { PdfRotationAngle } from '@/lib/pdf';
@@ -80,7 +88,7 @@ export const PageThumbnailCard: FC<PageThumbnailCardProps> = ({
       <div className="flex items-center justify-between gap-1 mb-2">
         <div className="flex items-center gap-1.5">
           {draggable && !disabled && (
-            <GripVertical
+            <DotsSixVertical
               className="w-3.5 h-3.5 text-muted-foreground/60 group-hover:text-foreground transition-colors shrink-0"
               aria-hidden="true"
             />
@@ -188,7 +196,7 @@ export const PageThumbnailCard: FC<PageThumbnailCardProps> = ({
                 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
               )}
             >
-              <RotateCcw className="w-3.5 h-3.5" aria-hidden="true" />
+              <ArrowCounterClockwise className="w-3.5 h-3.5" aria-hidden="true" />
             </button>
             <button
               type="button"
@@ -201,7 +209,7 @@ export const PageThumbnailCard: FC<PageThumbnailCardProps> = ({
                 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
               )}
             >
-              <RotateCw className="w-3.5 h-3.5" aria-hidden="true" />
+              <ArrowClockwise className="w-3.5 h-3.5" aria-hidden="true" />
             </button>
           </div>
         )}
@@ -219,7 +227,7 @@ export const PageThumbnailCard: FC<PageThumbnailCardProps> = ({
               'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
             )}
           >
-            <Trash2 className="w-3.5 h-3.5" aria-hidden="true" />
+            <Trash className="w-3.5 h-3.5" aria-hidden="true" />
           </button>
         )}
       </div>

@@ -1,14 +1,14 @@
 import { type FC, type DragEvent } from 'react';
 import {
-  RotateCw,
-  RotateCcw,
+  ArrowClockwise,
+  ArrowCounterClockwise,
   ArrowLeft,
   ArrowRight,
-  Trash2,
-  GripVertical,
-  ImageIcon,
-  AlertCircle,
-} from 'lucide-react';
+  Trash,
+  DotsSixVertical,
+  WarningCircle,
+} from '@/components/icons';
+import { Image as ImageIcon } from '@phosphor-icons/react';
 import { Badge } from '@/components/ui/Badge';
 import { cn } from '@/lib/utils/cn';
 import type { ImageDescriptor } from '@/lib/pdf/images';
@@ -72,7 +72,7 @@ export const ImageThumbnailCard: FC<ImageThumbnailCardProps> = ({
       <div className="flex items-center justify-between gap-1 mb-2">
         <div className="flex items-center gap-1.5 min-w-0">
           {draggable && !disabled && status !== 'error' && (
-            <GripVertical
+            <DotsSixVertical
               className="w-3.5 h-3.5 text-muted-foreground/60 group-hover:text-foreground transition-colors shrink-0"
               aria-hidden="true"
             />
@@ -106,7 +106,7 @@ export const ImageThumbnailCard: FC<ImageThumbnailCardProps> = ({
       <div className="relative aspect-[4/3] w-full rounded-lg bg-secondary/50 border border-border/80 overflow-hidden flex items-center justify-center p-1">
         {status === 'error' ? (
           <div className="flex flex-col items-center justify-center p-3 text-center text-destructive">
-            <AlertCircle className="w-6 h-6 mb-1.5 shrink-0" aria-hidden="true" />
+            <WarningCircle className="w-6 h-6 mb-1.5 shrink-0" aria-hidden="true" />
             <span className="text-xs font-semibold">Image Error</span>
             <span className="text-[10px] text-muted-foreground mt-0.5 line-clamp-2">
               {errorMessage || 'Failed to load'}
@@ -187,7 +187,7 @@ export const ImageThumbnailCard: FC<ImageThumbnailCardProps> = ({
               'disabled:opacity-30 disabled:pointer-events-none',
             )}
           >
-            <RotateCcw className="w-3.5 h-3.5" aria-hidden="true" />
+            <ArrowCounterClockwise className="w-3.5 h-3.5" aria-hidden="true" />
           </button>
           <button
             type="button"
@@ -201,7 +201,7 @@ export const ImageThumbnailCard: FC<ImageThumbnailCardProps> = ({
               'disabled:opacity-30 disabled:pointer-events-none',
             )}
           >
-            <RotateCw className="w-3.5 h-3.5" aria-hidden="true" />
+            <ArrowClockwise className="w-3.5 h-3.5" aria-hidden="true" />
           </button>
         </div>
 
@@ -217,7 +217,7 @@ export const ImageThumbnailCard: FC<ImageThumbnailCardProps> = ({
             'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
           )}
         >
-          <Trash2 className="w-3.5 h-3.5" aria-hidden="true" />
+          <Trash className="w-3.5 h-3.5" aria-hidden="true" />
         </button>
       </div>
     </div>

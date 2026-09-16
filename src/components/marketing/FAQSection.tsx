@@ -1,6 +1,6 @@
 import { useState, type FC } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
-import { ChevronDown } from 'lucide-react';
+import { CaretDown } from '@/components/icons';
 import { FAQ_ITEMS } from '@/constants/faq';
 import { cn } from '@/lib/utils/cn';
 
@@ -33,7 +33,7 @@ export const FAQSection: FC = () => {
               className="w-full flex items-center justify-between p-5 text-left font-medium text-foreground hover:text-primary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             >
               <span className="text-base sm:text-lg font-semibold pr-4">{item.question}</span>
-              <ChevronDown
+              <CaretDown
                 className={cn(
                   'w-5 h-5 shrink-0 text-muted-foreground transition-transform duration-200',
                   isOpen && 'rotate-180 text-primary',

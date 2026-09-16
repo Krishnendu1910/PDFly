@@ -1,6 +1,6 @@
 import type { FC } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
-import { FileText, ArrowDown, Lock, CheckCircle2, ShieldCheck } from 'lucide-react';
+import { FileText, ArrowDown, LockKey as Lock, CheckCircle as CheckCircle2, ShieldCheck } from '@/components/icons';
 
 export const AboutHeroVisual: FC = () => {
   const shouldReduceMotion = useReducedMotion();

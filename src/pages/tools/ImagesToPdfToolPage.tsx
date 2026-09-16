@@ -1,16 +1,16 @@
 import { useState, useEffect, useRef, useCallback, type FC } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  FileImage,
+  ToolIcon,
   ArrowLeft,
   ArrowRight,
   ShieldCheck,
-  Zap,
-  RotateCw,
-  RefreshCw,
-  Trash2,
-  CheckCircle2,
-} from 'lucide-react';
+  Lightning,
+  ArrowClockwise,
+  ArrowsClockwise,
+  Trash,
+  CheckCircle,
+} from '@/components/icons';
 import { ROUTES } from '@/constants/routes';
 import { IMAGE_TO_PDF_CONFIG } from '@/constants/file';
 import { useFilePipeline } from '@/hooks/useFilePipeline';
@@ -322,13 +322,10 @@ export const ImagesToPdfToolPage: FC = () => {
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-6 border-b border-border">
             <div className="flex items-center gap-4">
               <div className="w-14 h-14 rounded-xl bg-coral/10 text-coral dark:bg-coral/20 dark:text-coral flex items-center justify-center shrink-0">
-                <FileImage className="w-7 h-7" aria-hidden="true" />
+                <ToolIcon toolId="images-to-pdf" className="w-7 h-7" weight="duotone" aria-hidden="true" />
               </div>
               <div>
                 <div className="flex items-center gap-2 mb-1">
-                  <Badge variant="success" size="sm">
-                    Client-Side Engine Active
-                  </Badge>
                   <Badge variant="outline" size="sm">
                     Convert
                   </Badge>
@@ -369,7 +366,6 @@ export const ImagesToPdfToolPage: FC = () => {
           <DownloadResultDocket
             outputs={[outputResult]}
             toolName="Images to PDF"
-            toolIdentifier="[TOOL // 06 · IMAGE RASTERIZER]"
             onBackToEditing={() => setOutputResult(null)}
             onReset={() => {
               setOutputResult(null);
@@ -413,7 +409,7 @@ export const ImagesToPdfToolPage: FC = () => {
                     disabled={isProcessing}
                     title="Rotate all images 90° clockwise"
                   >
-                    <RotateCw className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" />
+                    <ArrowClockwise className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" />
                     <span>Rotate All</span>
                   </Button>
 
@@ -424,7 +420,7 @@ export const ImagesToPdfToolPage: FC = () => {
                     disabled={isProcessing}
                     title="Reset image sequence to initial order"
                   >
-                    <RefreshCw className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" />
+                    <ArrowsClockwise className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" />
                     <span>Reset Order</span>
                   </Button>
 
@@ -436,7 +432,7 @@ export const ImagesToPdfToolPage: FC = () => {
                     className="text-destructive hover:bg-destructive/10"
                     title="Remove all images"
                   >
-                    <Trash2 className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" />
+                    <Trash className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" />
                     <span>Clear</span>
                   </Button>
                 </div>
@@ -470,7 +466,7 @@ export const ImagesToPdfToolPage: FC = () => {
               <div className="pt-4 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-4">
                 <div className="text-xs text-muted-foreground">
                   <span className="text-emerald-600 dark:text-emerald-400 font-medium flex items-center gap-1.5">
-                    <CheckCircle2 className="w-4 h-4 inline" aria-hidden="true" />
+                    <CheckCircle className="w-4 h-4 inline" aria-hidden="true" />
                     {imageItems.length} {imageItems.length === 1 ? 'image' : 'images'} ready for conversion (total size: {formattedTotalSize}).
                   </span>
                 </div>
@@ -506,7 +502,7 @@ export const ImagesToPdfToolPage: FC = () => {
 
             <Card className="border-border bg-card">
               <CardContent className="p-5 flex items-start gap-3">
-                <Zap className="w-5 h-5 text-primary shrink-0 mt-0.5" aria-hidden="true" />
+                <Lightning className="w-5 h-5 text-primary shrink-0 mt-0.5" aria-hidden="true" />
                 <div>
                   <h3 className="text-sm font-semibold text-foreground">Proportional Aspect Ratio</h3>
                   <p className="text-xs text-muted-foreground mt-1 leading-relaxed">

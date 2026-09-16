@@ -328,10 +328,10 @@ describe('Phase 11: DownloadResultDocket Component Rendering', () => {
     );
 
     // Section container with accessible label
-    expect(html).toContain('aria-label="Document discharge docket"');
+    expect(html).toContain('aria-label="Document download docket"');
 
-    // Tool identifier
-    expect(html).toContain('[DISCHARGE // MERGED DOCUMENT]');
+    // Result ready title
+    expect(html).toContain('Merged PDF Document Result Ready');
 
     // Input field with stripped base name
     expect(html).toContain('value="invoice-merged"');
@@ -341,9 +341,6 @@ describe('Phase 11: DownloadResultDocket Component Rendering', () => {
 
     // Download button
     expect(html).toContain('Download PDF');
-
-    // Target designation preview
-    expect(html).toContain('invoice-merged.pdf');
   });
 
   it('renders multi-output ledger for split tool batches', () => {
@@ -375,12 +372,12 @@ describe('Phase 11: DownloadResultDocket Component Rendering', () => {
       />
     );
 
-    // Batch discharge docket accessible label
-    expect(html).toContain('aria-label="Split batch discharge docket"');
+    // Batch download docket accessible label
+    expect(html).toContain('aria-label="Split batch download docket"');
 
-    // Manifest title and item count
-    expect(html).toContain('Split Output Manifest');
-    expect(html).toContain('FILES READY');
+    // Results title and item count
+    expect(html).toContain('Split PDF Results');
+    expect(html).toContain('files');
 
     // Batch prefix input for 1-based numbering
     expect(html).toContain('id="batch-prefix-input"');

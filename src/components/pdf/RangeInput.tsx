@@ -1,5 +1,5 @@
 import { type FC, useId, useState, useEffect } from 'react';
-import { AlertCircle, CheckCircle2 } from 'lucide-react';
+import { WarningCircle, CheckCircle } from '@/components/icons';
 import { parsePageRange } from '@/lib/pdf';
 import { cn } from '@/lib/utils/cn';
 
@@ -91,7 +91,7 @@ export const RangeInput: FC<RangeInputProps> = ({
 
         {parsedCount > 0 && !error && (
           <div className="absolute right-3 top-2.5 flex items-center gap-1 text-xs text-emerald-600 dark:text-emerald-400 font-medium">
-            <CheckCircle2 className="w-4 h-4" aria-hidden="true" />
+            <CheckCircle className="w-4 h-4" aria-hidden="true" />
             <span>{parsedCount} {parsedCount === 1 ? 'page' : 'pages'} selected</span>
           </div>
         )}
@@ -100,7 +100,7 @@ export const RangeInput: FC<RangeInputProps> = ({
       {/* Feedback / Help text */}
       {error ? (
         <p id={`${inputId}-error`} className="text-xs text-destructive flex items-center gap-1.5 font-medium">
-          <AlertCircle className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+          <WarningCircle className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
           <span>{error}</span>
         </p>
       ) : (

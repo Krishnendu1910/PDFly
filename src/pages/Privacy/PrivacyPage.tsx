@@ -5,17 +5,17 @@ import {
   ShieldCheck,
   Check,
   X,
-  Monitor,
-  CloudOff,
+  Desktop,
+  CloudSlash,
   Sliders,
   ArrowRight,
   Cpu,
-  ServerOff,
+  Database,
   HardDrive,
   Globe,
-  EyeOff,
-  type LucideIcon,
-} from 'lucide-react';
+  EyeSlash,
+  type PDFlyIcon,
+} from '@/components/icons';
 import { ROUTES } from '@/constants/routes';
 import { Container } from '@/components/ui/Container';
 import { Button } from '@/components/ui/Button';
@@ -26,7 +26,7 @@ interface TechnicalItem {
   label: string;
   status: string;
   statusClass: string;
-  icon: LucideIcon;
+  icon: PDFlyIcon;
   description: ReactNode;
 }
 
@@ -42,13 +42,13 @@ export const PrivacyPage: FC = () => {
       label: 'LOCAL',
       title: 'Local Processing',
       description: 'Your document is processed in your browser memory.',
-      icon: Monitor,
+      icon: Desktop,
     },
     {
       label: 'NO UPLOAD',
       title: 'No Processing Uploads',
       description: 'PDFly does not upload your document for PDF processing.',
-      icon: CloudOff,
+      icon: CloudSlash,
     },
     {
       label: 'YOUR CONTROL',
@@ -85,7 +85,7 @@ export const PrivacyPage: FC = () => {
       status: 'NONE',
       statusClass:
         'px-2.5 py-1 rounded-md text-[11px] font-mono font-semibold tracking-wide uppercase bg-muted text-muted-foreground border border-border shrink-0',
-      icon: ServerOff,
+      icon: Database,
       description: 'PDFly does not operate document-storage servers or databases for uploaded files.',
     },
     {
@@ -122,7 +122,7 @@ export const PrivacyPage: FC = () => {
       status: 'NONE',
       statusClass:
         'px-2.5 py-1 rounded-md text-[11px] font-mono font-semibold tracking-wide uppercase bg-muted text-muted-foreground border border-border shrink-0',
-      icon: EyeOff,
+      icon: EyeSlash,
       description:
         'No third-party analytics, tracking pixels, session recorders, or advertising networks.',
     },
@@ -300,7 +300,7 @@ export const PrivacyPage: FC = () => {
             <div className="p-3.5 sm:p-4 rounded-xl border border-emerald/20 bg-emerald/5 flex items-center justify-between gap-4">
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-lg bg-emerald/15 text-emerald flex items-center justify-center shrink-0">
-                  <Monitor className="w-4 h-4" aria-hidden="true" />
+                  <Desktop className="w-4 h-4" aria-hidden="true" />
                 </div>
                 <div>
                   <div className="text-xs font-mono font-bold uppercase tracking-wider text-emerald">

@@ -108,8 +108,7 @@ export default {
       },
       fontFamily: {
         display: [
-          '"Space Grotesk"',
-          'Inter',
+          'Manrope',
           'system-ui',
           '-apple-system',
           'BlinkMacSystemFont',
@@ -118,7 +117,7 @@ export default {
           'sans-serif',
         ],
         sans: [
-          'Inter',
+          'Manrope',
           'system-ui',
           '-apple-system',
           'BlinkMacSystemFont',
@@ -127,7 +126,7 @@ export default {
           'sans-serif',
         ],
         mono: [
-          '"IBM Plex Mono"',
+          '"DM Mono"',
           'ui-monospace',
           'SFMono-Regular',
           'Menlo',

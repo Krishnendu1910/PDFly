@@ -1,5 +1,5 @@
 import { useState, useMemo, type FC } from 'react';
-import { Search, X, Layers, Filter } from 'lucide-react';
+import { MagnifyingGlass, X, Stack, Funnel } from '@/components/icons';
 import { TOOLS } from '@/constants/tools';
 import type { ToolCategory } from '@/types/tools';
 import { Container } from '@/components/ui/Container';
@@ -40,7 +40,7 @@ export const ToolsIndexPage: FC = () => {
         {/* Header */}
         <div className="max-w-3xl space-y-4">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider bg-primary/10 text-primary border border-primary/20">
-            <Layers className="w-3.5 h-3.5" aria-hidden="true" />
+            <Stack className="w-3.5 h-3.5" aria-hidden="true" />
             <span>Browser Toolkit</span>
           </div>
 
@@ -98,7 +98,7 @@ export const ToolsIndexPage: FC = () => {
 
           {/* Search Box */}
           <div className="relative w-full sm:w-72">
-            <Search
+            <MagnifyingGlass
               className="w-4 h-4 text-muted-foreground absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none"
               aria-hidden="true"
             />
@@ -134,7 +134,7 @@ export const ToolsIndexPage: FC = () => {
           ) : (
             <div className="p-12 text-center border border-dashed border-border rounded-2xl bg-card/50 max-w-md mx-auto space-y-4">
               <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center text-muted-foreground mx-auto">
-                <Filter className="w-5 h-5" aria-hidden="true" />
+                <Funnel className="w-5 h-5" aria-hidden="true" />
               </div>
               <h3 className="text-base font-semibold text-foreground">No tools found</h3>
               <p className="text-sm text-muted-foreground">

@@ -3,14 +3,14 @@ import { Link } from "react-router-dom";
 import { motion, useReducedMotion } from "framer-motion";
 import {
   ArrowRight,
-  Laptop,
-  CloudOff,
-  Layers,
+  Desktop,
+  CloudSlash,
+  Stack,
   ShieldCheck,
-  Sparkles,
+  Sparkle,
   Heart,
-  type LucideIcon,
-} from "lucide-react";
+  type PDFlyIcon,
+} from "@/components/icons";
 import { POPULAR_TOOL_IDS, TOOL_MAP } from "@/constants/tools";
 import { ROUTES } from "@/constants/routes";
 import { Container } from "@/components/ui/Container";
@@ -26,7 +26,7 @@ interface BenefitItem {
   id: string;
   title: string;
   description: string;
-  icon: LucideIcon;
+  icon: PDFlyIcon;
   iconBg: string;
 }
 
@@ -35,21 +35,21 @@ const BENEFITS: readonly BenefitItem[] = [
     id: "runs-in-browser",
     title: "Runs in your browser",
     description: "PDF processing happens locally in your browser.",
-    icon: Laptop,
+    icon: Desktop,
     iconBg: "bg-cobalt/10 text-cobalt",
   },
   {
     id: "no-file-uploads",
     title: "No file uploads",
     description: "Your documents aren't uploaded to a server for PDF processing.",
-    icon: CloudOff,
+    icon: CloudSlash,
     iconBg: "bg-emerald/10 text-emerald",
   },
   {
     id: "everyday-pdf-work",
     title: "Built for everyday PDF work",
     description: "Merge, split, compress, convert, edit, and sign with simple tools.",
-    icon: Layers,
+    icon: Stack,
     iconBg: "bg-coral/10 text-coral",
   },
   {
@@ -63,7 +63,7 @@ const BENEFITS: readonly BenefitItem[] = [
     id: "simple-by-design",
     title: "Simple by design",
     description: "Focused PDF tools without unnecessary complexity.",
-    icon: Sparkles,
+    icon: Sparkle,
     iconBg: "bg-amber/10 text-amber",
   },
   {
@@ -240,7 +240,7 @@ export const HomePage: FC = () => {
                       item.iconBg,
                     )}
                   >
-                    <Icon className="w-5 h-5" aria-hidden="true" />
+                    <Icon className="w-5 h-5" weight="duotone" aria-hidden="true" />
                   </div>
                   <div className="space-y-1">
                     <h3 className="font-display text-base sm:text-lg font-bold text-foreground">

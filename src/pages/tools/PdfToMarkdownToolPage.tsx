@@ -1,17 +1,17 @@
 import { useState, useEffect, type FC } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  FileCode,
+  ToolIcon,
   ArrowLeft,
   ArrowRight,
   ShieldCheck,
-  Zap,
+  Lightning,
   Copy,
   Check,
-  Download,
-  RotateCcw,
+  DownloadSimple,
+  ArrowCounterClockwise,
   FileText,
-} from 'lucide-react';
+} from '@/components/icons';
 import { ROUTES } from '@/constants/routes';
 import { PDF_ONLY_CONFIG } from '@/constants/file';
 import { useFilePipeline } from '@/hooks/useFilePipeline';
@@ -172,13 +172,10 @@ export const PdfToMarkdownToolPage: FC = () => {
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-6 border-b border-border">
             <div className="flex items-center gap-4">
               <div className="w-14 h-14 rounded-xl bg-teal/10 text-teal dark:bg-teal/20 dark:text-teal flex items-center justify-center shrink-0">
-                <FileCode className="w-7 h-7" aria-hidden="true" />
+                <ToolIcon toolId="pdf-to-markdown" className="w-7 h-7" weight="duotone" aria-hidden="true" />
               </div>
               <div>
                 <div className="flex items-center gap-2 mb-1">
-                  <Badge variant="success" size="sm">
-                    Client-Side Engine Active
-                  </Badge>
                   <Badge variant="outline" size="sm">
                     Convert
                   </Badge>
@@ -221,9 +218,6 @@ export const PdfToMarkdownToolPage: FC = () => {
               {/* Docket Header */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-border">
                 <div>
-                  <div className="text-[11px] font-mono text-muted-foreground uppercase tracking-wider mb-1">
-                    [TOOL // 12 · MARKDOWN EXTRACTOR]
-                  </div>
                   <h2 className="text-lg font-bold text-foreground">
                     Markdown Extraction Complete
                   </h2>
@@ -253,7 +247,7 @@ export const PdfToMarkdownToolPage: FC = () => {
                     onClick={handleDownload}
                     className="flex items-center gap-1.5"
                   >
-                    <Download className="w-4 h-4" />
+                    <DownloadSimple className="w-4 h-4" />
                     <span>Download .md</span>
                   </Button>
 
@@ -263,7 +257,7 @@ export const PdfToMarkdownToolPage: FC = () => {
                     onClick={handleReset}
                     className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground"
                   >
-                    <RotateCcw className="w-4 h-4" />
+                    <ArrowCounterClockwise className="w-4 h-4" />
                     <span>Reset</span>
                   </Button>
                 </div>
@@ -380,7 +374,7 @@ export const PdfToMarkdownToolPage: FC = () => {
 
               <Card className="border-border bg-card">
                 <CardContent className="p-5 flex items-start gap-3">
-                  <Zap className="w-5 h-5 text-primary shrink-0 mt-0.5" aria-hidden="true" />
+                  <Lightning className="w-5 h-5 text-primary shrink-0 mt-0.5" aria-hidden="true" />
                   <div>
                     <h3 className="text-sm font-semibold text-foreground">Coordinate-Based Reconstruction</h3>
                     <p className="text-xs text-muted-foreground mt-1 leading-relaxed">

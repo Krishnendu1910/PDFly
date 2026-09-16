@@ -6,17 +6,17 @@ import {
   type FC,
 } from 'react';
 import {
-  Download,
+  DownloadSimple,
   ArrowLeft,
   X,
-  ChevronLeft,
-  ChevronRight,
-  ZoomIn,
-  ZoomOut,
-  RotateCcw,
-  Loader2,
-  AlertTriangle,
-} from 'lucide-react';
+  CaretLeft,
+  CaretRight,
+  MagnifyingGlassPlus,
+  MagnifyingGlassMinus,
+  ArrowsClockwise,
+  CircleNotch,
+  Warning,
+} from '@/components/icons';
 import { Button } from '@/components/ui/Button';
 import { getPdfJs } from '@/lib/pdf/engine/loader';
 import {
@@ -362,7 +362,7 @@ export const PdfPreviewModal: FC<PdfPreviewModalProps> = ({
                   onClose();
                   onBackToEditing();
                 }}
-                className="font-mono text-xs uppercase tracking-wider hidden sm:inline-flex"
+                className="text-xs font-semibold hidden sm:inline-flex"
                 title="Return to editing with current parameters intact"
               >
                 <ArrowLeft className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" />
@@ -375,10 +375,10 @@ export const PdfPreviewModal: FC<PdfPreviewModalProps> = ({
               variant="primary"
               size="sm"
               onClick={onDownload}
-              className="font-mono text-xs uppercase tracking-wider font-semibold"
+              className="text-xs font-semibold"
               title="Download this generated PDF"
             >
-              <Download className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" />
+              <DownloadSimple className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" />
               <span>Download PDF</span>
             </Button>
 
@@ -406,7 +406,7 @@ export const PdfPreviewModal: FC<PdfPreviewModalProps> = ({
               aria-label="Previous page"
               className="h-8 px-2"
             >
-              <ChevronLeft className="w-4 h-4" aria-hidden="true" />
+              <CaretLeft className="w-4 h-4" aria-hidden="true" />
               <span className="sr-only">Previous Page</span>
             </Button>
 
@@ -423,7 +423,7 @@ export const PdfPreviewModal: FC<PdfPreviewModalProps> = ({
               aria-label="Next page"
               className="h-8 px-2"
             >
-              <ChevronRight className="w-4 h-4" aria-hidden="true" />
+              <CaretRight className="w-4 h-4" aria-hidden="true" />
               <span className="sr-only">Next Page</span>
             </Button>
           </div>
@@ -439,7 +439,7 @@ export const PdfPreviewModal: FC<PdfPreviewModalProps> = ({
               aria-label="Zoom out"
               className="h-8 px-2"
             >
-              <ZoomOut className="w-4 h-4" aria-hidden="true" />
+              <MagnifyingGlassMinus className="w-4 h-4" aria-hidden="true" />
               <span className="sr-only">Zoom Out</span>
             </Button>
 
@@ -456,7 +456,7 @@ export const PdfPreviewModal: FC<PdfPreviewModalProps> = ({
               aria-label="Zoom in"
               className="h-8 px-2"
             >
-              <ZoomIn className="w-4 h-4" aria-hidden="true" />
+              <MagnifyingGlassPlus className="w-4 h-4" aria-hidden="true" />
               <span className="sr-only">Zoom In</span>
             </Button>
 
@@ -469,9 +469,9 @@ export const PdfPreviewModal: FC<PdfPreviewModalProps> = ({
               disabled={scale === 1.0 || isLoadingDoc}
               onClick={handleResetZoom}
               aria-label="Reset zoom to 100%"
-              className="h-8 px-2 text-[11px] uppercase tracking-wider"
+              className="h-8 px-2 text-[11px] font-semibold"
             >
-              <RotateCcw className="w-3.5 h-3.5 mr-1" aria-hidden="true" />
+              <ArrowsClockwise className="w-3.5 h-3.5 mr-1" aria-hidden="true" />
               <span>Reset</span>
             </Button>
           </div>
@@ -481,8 +481,8 @@ export const PdfPreviewModal: FC<PdfPreviewModalProps> = ({
         <div className="flex-1 overflow-auto bg-muted/20 p-4 sm:p-8 flex items-center justify-center min-h-0 relative select-none">
           {isLoadingDoc && (
             <div className="flex flex-col items-center justify-center gap-3 py-16 text-muted-foreground">
-              <Loader2 className="w-8 h-8 animate-spin text-primary" aria-hidden="true" />
-              <p className="font-mono text-xs uppercase tracking-wider">
+              <CircleNotch className="w-8 h-8 animate-spin text-primary" aria-hidden="true" />
+              <p className="text-xs text-muted-foreground font-medium">
                 Loading PDF preview...
               </p>
             </div>
@@ -491,7 +491,7 @@ export const PdfPreviewModal: FC<PdfPreviewModalProps> = ({
           {renderError && !isLoadingDoc && (
             <div className="max-w-md p-6 rounded-lg bg-card border border-destructive/40 text-center space-y-4 shadow-sm">
               <div className="mx-auto w-10 h-10 rounded-full bg-destructive/10 flex items-center justify-center text-destructive">
-                <AlertTriangle className="w-5 h-5" aria-hidden="true" />
+                <Warning className="w-5 h-5" aria-hidden="true" />
               </div>
               <div>
                 <h3 className="font-display font-semibold text-base text-foreground">
@@ -522,9 +522,9 @@ export const PdfPreviewModal: FC<PdfPreviewModalProps> = ({
                   variant="primary"
                   size="sm"
                   onClick={onDownload}
-                  className="font-mono text-xs uppercase tracking-wider w-full sm:w-auto"
+                  className="text-xs font-semibold uppercase tracking-wider w-full sm:w-auto"
                 >
-                  <Download className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" />
+                  <DownloadSimple className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" />
                   <span>Download PDF</span>
                 </Button>
               </div>
@@ -545,7 +545,7 @@ export const PdfPreviewModal: FC<PdfPreviewModalProps> = ({
             {/* Subtle spinner while switching pages */}
             {isRenderingPage && (
               <div className="absolute inset-0 bg-background/30 backdrop-blur-[1px] flex items-center justify-center rounded-[2px]">
-                <Loader2 className="w-6 h-6 animate-spin text-primary" aria-hidden="true" />
+                <CircleNotch className="w-6 h-6 animate-spin text-primary" aria-hidden="true" />
               </div>
             )}
           </div>

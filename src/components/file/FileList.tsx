@@ -1,5 +1,5 @@
 import { type FC } from 'react';
-import { Trash2 } from 'lucide-react';
+import { Trash } from '@/components/icons';
 import { FileCard } from '@/components/file/FileCard';
 import { Button } from '@/components/ui/Button';
 import type { ManagedFile } from '@/types/file';
@@ -49,7 +49,7 @@ export const FileList: FC<FileListProps> = ({
           onClick={onClearFiles}
           className="text-xs text-muted-foreground hover:text-destructive hover:bg-destructive/10"
         >
-          <Trash2 className="w-3.5 h-3.5 mr-1" aria-hidden="true" />
+          <Trash className="w-3.5 h-3.5 mr-1" aria-hidden="true" />
           Clear All
         </Button>
       </div>

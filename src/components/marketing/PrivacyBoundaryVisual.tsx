@@ -1,5 +1,5 @@
 import type { FC } from 'react';
-import { FileText, ShieldCheck, CloudOff, Lock } from 'lucide-react';
+import { FileText, ShieldCheck, CloudSlash, Lock } from '@/components/icons';
 
 export const PrivacyBoundaryVisual: FC = () => {
   return (
@@ -74,7 +74,7 @@ export const PrivacyBoundaryVisual: FC = () => {
         <div className="lg:col-span-4 rounded-xl border border-dashed border-border bg-muted/20 p-5 sm:p-6 flex flex-col justify-between space-y-4">
           <div className="flex items-center gap-2 text-muted-foreground/80">
             <span className="flex items-center justify-center w-6 h-6 rounded-md bg-muted text-muted-foreground">
-              <CloudOff className="w-3.5 h-3.5" />
+              <CloudSlash className="w-3.5 h-3.5" />
             </span>
             <span className="font-mono text-xs font-bold uppercase tracking-wider">
               Remote Servers

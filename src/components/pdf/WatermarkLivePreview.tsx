@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, type FC, type CSSProperties } from 'react';
-import { ChevronLeft, ChevronRight, Eye, RefreshCw, AlertCircle, Stamp } from 'lucide-react';
+import { CaretLeft, CaretRight, Eye, ArrowsClockwise, WarningCircle, Stamp } from '@/components/icons';
 import { Button } from '@/components/ui/Button';
 import type { WatermarkPosition, WatermarkRotation } from '@/lib/pdf';
 import type { RenderPagePreviewResult } from '@/lib/pdf/rendering/thumbnail';
@@ -132,7 +132,7 @@ export const WatermarkLivePreview: FC<WatermarkLivePreviewProps> = ({
               className="h-7 px-2 text-xs"
               aria-label="Previous preview page"
             >
-              <ChevronLeft className="w-3.5 h-3.5" />
+              <CaretLeft className="w-3.5 h-3.5" />
             </Button>
 
             <span className="font-mono text-xs text-muted-foreground px-1 select-none">
@@ -148,7 +148,7 @@ export const WatermarkLivePreview: FC<WatermarkLivePreviewProps> = ({
               className="h-7 px-2 text-xs"
               aria-label="Next preview page"
             >
-              <ChevronRight className="w-3.5 h-3.5" />
+              <CaretRight className="w-3.5 h-3.5" />
             </Button>
           </div>
         )}
@@ -158,12 +158,12 @@ export const WatermarkLivePreview: FC<WatermarkLivePreviewProps> = ({
       <div className="w-full flex-1 flex items-center justify-center py-2">
         {loading && !pagePreview ? (
           <div className="flex flex-col items-center justify-center p-8 text-center space-y-2 text-muted-foreground min-h-[280px]">
-            <RefreshCw className="w-6 h-6 animate-spin text-primary" />
+            <ArrowsClockwise className="w-6 h-6 animate-spin text-primary" />
             <p className="text-xs font-medium">Loading document preview…</p>
           </div>
         ) : error ? (
           <div className="flex flex-col items-center justify-center p-6 text-center space-y-2 text-muted-foreground min-h-[280px]">
-            <AlertCircle className="w-6 h-6 text-amber" />
+            <WarningCircle className="w-6 h-6 text-amber" />
             <p className="text-xs font-medium text-foreground">Preview unavailable</p>
             <p className="text-[11px] text-muted-foreground max-w-xs">{error}</p>
           </div>
@@ -216,7 +216,7 @@ export const WatermarkLivePreview: FC<WatermarkLivePreviewProps> = ({
             {/* Subtle Loading Indicator during page switch */}
             {loading && (
               <div className="absolute inset-0 bg-background/50 backdrop-blur-2xs flex items-center justify-center text-xs font-medium text-foreground">
-                <RefreshCw className="w-4 h-4 animate-spin text-primary mr-1.5" />
+                <ArrowsClockwise className="w-4 h-4 animate-spin text-primary mr-1.5" />
                 <span>Updating page…</span>
               </div>
             )}

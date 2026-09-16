@@ -1,5 +1,5 @@
 import type { FC } from 'react';
-import { Crop, Hash, Stamp, PenLine, CheckCircle2 } from 'lucide-react';
+import { Crop, Hash, Stamp, PenNib, CheckCircle } from '@/components/icons';
 
 export const EditVisual: FC = () => {
   return (
@@ -8,7 +8,7 @@ export const EditVisual: FC = () => {
       <div className="flex items-center justify-between pb-3.5 border-b border-border text-xs">
         <div className="flex items-center gap-2">
           <span className="w-6 h-6 rounded bg-violet/10 text-violet flex items-center justify-center font-bold">
-            <PenLine className="w-3.5 h-3.5" />
+            <PenNib className="w-3.5 h-3.5" />
           </span>
           <span className="font-semibold text-foreground">Document Finishing Suite</span>
         </div>
@@ -60,11 +60,11 @@ export const EditVisual: FC = () => {
 
           {/* Draggable Free Signature Stamp */}
           <div className="p-2 rounded-lg bg-card border border-violet/30 shadow-xs ring-1 ring-violet/20 flex items-center gap-2">
-            <PenLine className="w-3.5 h-3.5 text-violet shrink-0" />
+            <PenNib className="w-3.5 h-3.5 text-violet shrink-0" />
             <div>
               <p className="font-serif italic text-xs text-foreground leading-none">Jane Smith</p>
               <p className="text-[9px] text-emerald font-medium flex items-center gap-0.5 mt-0.5">
-                <CheckCircle2 className="w-2.5 h-2.5" /> Placed freely
+                <CheckCircle className="w-2.5 h-2.5" /> Placed freely
               </p>
             </div>
           </div>
@@ -86,7 +86,7 @@ export const EditVisual: FC = () => {
           <span>Watermark</span>
         </div>
         <div className="flex items-center justify-center gap-1 p-1 rounded bg-muted/40">
-          <PenLine className="w-3 h-3 text-violet" />
+          <PenNib className="w-3 h-3 text-violet" />
           <span>Sign</span>
         </div>
       </div>

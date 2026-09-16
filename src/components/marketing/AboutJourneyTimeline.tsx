@@ -1,6 +1,6 @@
 import type { FC } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
-import { FileText, Sparkles, CheckCircle2 } from 'lucide-react';
+import { FileText, Sparkle, CheckCircle } from '@/components/icons';
 
 interface Milestone {
   id: string;
@@ -123,9 +123,9 @@ export const AboutJourneyTimeline: FC = () => {
                 }`}
               >
                 {isCompleted ? (
-                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  <CheckCircle className="w-3.5 h-3.5" />
                 ) : isCurrent ? (
-                  <Sparkles className="w-3.5 h-3.5" />
+                  <Sparkle className="w-3.5 h-3.5" />
                 ) : (
                   <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/50" />
                 )}

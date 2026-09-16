@@ -6,7 +6,7 @@ import { Container } from '@/components/ui/Container';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Card, CardContent } from '@/components/ui/Card';
-import { ArrowLeft, Clock, Cpu, ShieldCheck } from 'lucide-react';
+import { ArrowLeft, Clock, Cpu, ShieldCheck } from '@/components/icons';
 import type { ToolId } from '@/types/tools';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 

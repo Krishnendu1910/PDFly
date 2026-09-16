@@ -1,6 +1,6 @@
 import { useState, useEffect, type FC } from 'react';
 import { Link } from 'react-router-dom';
-import { RotateCw, RotateCcw, ArrowLeft, ArrowRight, ShieldCheck, Zap, Rotate3D } from 'lucide-react';
+import { ToolIcon, ArrowClockwise, ArrowCounterClockwise, ArrowLeft, ArrowRight, ShieldCheck, Lightning } from '@/components/icons';
 import { ROUTES } from '@/constants/routes';
 import { PDF_ONLY_CONFIG } from '@/constants/file';
 import { useFilePipeline } from '@/hooks/useFilePipeline';
@@ -69,37 +69,7 @@ export const RotateToolPage: FC = () => {
     getPdfPageCount(activeFile.file)
       .then(async (count) => {
         if (isCancelled) return;
-
-        const initialPages: PdfPageDescriptor[] = Array.from({ length: count }, (_, idx) => ({
-          id: `page_${idx}_${activeFile.id}`,
-          pageNumber: idx + 1,
-          originalIndex: idx,
-          rotation: 0,
-          thumbnailStatus: 'loading',
-        }));
-        setPages(initialPages);
-
-        for (let i = 1; i <= count; i++) {
-          if (isCancelled) break;
-          try {
-            const url = await renderPageThumbnail(activeFile.file, i, { targetWidth: 180 });
-            if (isCancelled) break;
-            setPages((prev) =>
-              prev.map((p) =>
-                p.originalIndex === i - 1
-                  ? { ...p, thumbnailUrl: url, thumbnailStatus: 'loaded' }
-                  : p,
-              ),
-            );
-          } catch {
-            if (isCancelled) break;
-            setPages((prev) =>
-              prev.map((p) =>
-                p.originalIndex === i - 1 ? { ...p, thumbnailStatus: 'error' } : p,
-              ),
-            );
-          }
-        }
+        setInitialPages(count);
       })
       .catch((err: unknown) => {
         if (!isCancelled) {
@@ -108,6 +78,39 @@ export const RotateToolPage: FC = () => {
           setOperationErrors([{ code: code as FileValidationError['code'], message: msg }]);
         }
       });
+
+    const setInitialPages = async (count: number) => {
+      const initialPages: PdfPageDescriptor[] = Array.from({ length: count }, (_, idx) => ({
+        id: `page_${idx}_${activeFile.id}`,
+        pageNumber: idx + 1,
+        originalIndex: idx,
+        rotation: 0,
+        thumbnailStatus: 'loading',
+      }));
+      setPages(initialPages);
+
+      for (let i = 1; i <= count; i++) {
+        if (isCancelled) break;
+        try {
+          const url = await renderPageThumbnail(activeFile.file, i, { targetWidth: 180 });
+          if (isCancelled) break;
+          setPages((prev) =>
+            prev.map((p) =>
+              p.originalIndex === i - 1
+                ? { ...p, thumbnailUrl: url, thumbnailStatus: 'loaded' }
+                : p,
+            ),
+          );
+        } catch {
+          if (isCancelled) break;
+          setPages((prev) =>
+            prev.map((p) =>
+              p.originalIndex === i - 1 ? { ...p, thumbnailStatus: 'error' } : p,
+            ),
+          );
+        }
+      }
+    };
 
     return () => {
       isCancelled = true;
@@ -226,13 +229,10 @@ export const RotateToolPage: FC = () => {
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-6 border-b border-border">
             <div className="flex items-center gap-4">
               <div className="w-14 h-14 rounded-xl bg-amber/10 text-amber dark:bg-amber/20 dark:text-amber flex items-center justify-center shrink-0">
-                <Rotate3D className="w-7 h-7" aria-hidden="true" />
+                <ToolIcon toolId="rotate" className="w-7 h-7" weight="duotone" aria-hidden="true" />
               </div>
               <div>
                 <div className="flex items-center gap-2 mb-1">
-                  <Badge variant="success" size="sm">
-                    Client-Side Engine Active
-                  </Badge>
                   <Badge variant="outline" size="sm">
                     Organize
                   </Badge>
@@ -273,7 +273,6 @@ export const RotateToolPage: FC = () => {
           <DownloadResultDocket
             outputs={[outputResult]}
             toolName="Rotated PDF"
-            toolIdentifier="[TOOL // 04 · ORIENTATION TABLE]"
             onBackToEditing={() => setOutputResult(null)}
             onReset={() => {
               setOutputResult(null);
@@ -318,7 +317,7 @@ export const RotateToolPage: FC = () => {
                       disabled={isProcessing}
                       className="text-xs"
                     >
-                      <RotateCw className="w-3.5 h-3.5 mr-1" aria-hidden="true" />
+                      <ArrowClockwise className="w-3.5 h-3.5 mr-1" aria-hidden="true" />
                       Rotate 90° CW
                     </Button>
 
@@ -330,7 +329,7 @@ export const RotateToolPage: FC = () => {
                       disabled={isProcessing}
                       className="text-xs"
                     >
-                      <RotateCcw className="w-3.5 h-3.5 mr-1" aria-hidden="true" />
+                      <ArrowCounterClockwise className="w-3.5 h-3.5 mr-1" aria-hidden="true" />
                       Rotate 90° CCW
                     </Button>
 
@@ -446,7 +445,7 @@ export const RotateToolPage: FC = () => {
 
             <Card className="border-border bg-card">
               <CardContent className="p-5 flex items-start gap-3">
-                <Zap className="w-5 h-5 text-primary shrink-0 mt-0.5" aria-hidden="true" />
+                <Lightning className="w-5 h-5 text-primary shrink-0 mt-0.5" aria-hidden="true" />
                 <div>
                   <h3 className="text-sm font-semibold text-foreground">Instantaneous Execution</h3>
                   <p className="text-xs text-muted-foreground mt-1 leading-relaxed">

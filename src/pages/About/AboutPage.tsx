@@ -3,16 +3,16 @@ import { Link } from 'react-router-dom';
 import { motion, useReducedMotion } from 'framer-motion';
 import {
   ArrowRight,
-  Monitor,
+  Desktop,
   Target,
-  CheckCircle2,
-  MousePointerClick,
+  CheckCircle,
+  CursorClick,
   Cpu,
   Eye,
-  Download,
+  DownloadSimple,
   FileText,
-  Sparkles,
-} from 'lucide-react';
+  Sparkle,
+} from '@/components/icons';
 import { ROUTES } from '@/constants/routes';
 import { Container } from '@/components/ui/Container';
 import { Button } from '@/components/ui/Button';
@@ -32,7 +32,7 @@ export const AboutPage: FC = () => {
       num: '01',
       label: 'LOCAL',
       description: 'Processing happens in your browser.',
-      icon: Monitor,
+      icon: Desktop,
     },
     {
       num: '02',
@@ -44,7 +44,7 @@ export const AboutPage: FC = () => {
       num: '03',
       label: 'SIMPLE',
       description: 'Select a file, configure the task, review the result, and download.',
-      icon: CheckCircle2,
+      icon: CheckCircle,
     },
   ];
 
@@ -53,7 +53,7 @@ export const AboutPage: FC = () => {
       step: '01',
       name: 'SELECT',
       description: 'Choose your PDF or supported file.',
-      icon: MousePointerClick,
+      icon: CursorClick,
     },
     {
       step: '02',
@@ -71,7 +71,7 @@ export const AboutPage: FC = () => {
       step: '04',
       name: 'DOWNLOAD',
       description: 'Rename the result if needed and save it to your device.',
-      icon: Download,
+      icon: DownloadSimple,
     },
   ];
 
@@ -88,7 +88,7 @@ export const AboutPage: FC = () => {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-center">
             <div className="lg:col-span-7 space-y-5 text-center lg:text-left">
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider bg-primary/10 text-primary border border-primary/20">
-                <Sparkles className="w-3.5 h-3.5" aria-hidden="true" />
+                <Sparkle className="w-3.5 h-3.5" aria-hidden="true" />
                 <span>About PDFly</span>
               </div>
 

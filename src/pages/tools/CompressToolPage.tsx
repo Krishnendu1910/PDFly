@@ -1,16 +1,16 @@
-import { useState, useEffect, type FC } from 'react';
+import { useState, useEffect, useRef, type FC } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  Minimize2,
+  ToolIcon,
   ArrowLeft,
   ArrowRight,
   ShieldCheck,
-  Zap,
-  RotateCcw,
+  Lightning,
+  ArrowCounterClockwise,
   FileText,
   Image as ImageIcon,
-  Sparkles,
-} from 'lucide-react';
+  Sparkle,
+} from '@/components/icons';
 import { ROUTES } from '@/constants/routes';
 import { COMPRESS_PDF_CONFIG } from '@/constants/file';
 import { useFilePipeline } from '@/hooks/useFilePipeline';
@@ -29,10 +29,12 @@ import { getDefaultDownloadFilename } from '@/utils/filenameUtils';
 import {
   detectPdfCharacteristics,
   compressPdfDocument,
+  parseTargetSizeBytes,
   PdfOperationError,
   type CompressionMode,
   type CompressionResult,
   type PdfCharacteristics,
+  type TargetSizeUnit,
 } from '@/lib/pdf';
 import type { FileValidationError } from '@/types/file';
 
@@ -43,6 +45,10 @@ export const CompressToolPage: FC = () => {
   );
 
   const [selectedMode, setSelectedMode] = useState<CompressionMode>('balanced');
+  const [targetSizeValue, setTargetSizeValue] = useState<string>('');
+  const [targetSizeUnit, setTargetSizeUnit] = useState<TargetSizeUnit>('MB');
+  const [targetSizeError, setTargetSizeError] = useState<string | null>(null);
+
   const [characteristics, setCharacteristics] = useState<PdfCharacteristics | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -50,6 +56,8 @@ export const CompressToolPage: FC = () => {
   const [progressStage, setProgressStage] = useState('Analyzing document structure...');
   const [compressionResult, setCompressionResult] = useState<CompressionResult | null>(null);
   const [operationErrors, setOperationErrors] = useState<FileValidationError[]>([]);
+
+  const prevFileIdRef = useRef<string | null>(null);
 
   const {
     files,
@@ -70,10 +78,28 @@ export const CompressToolPage: FC = () => {
     let isCancelled = false;
 
     if (!activeFile) {
+      prevFileIdRef.current = null;
       setCharacteristics(null);
       setCompressionResult(null);
       setOperationErrors([]);
+      setTargetSizeValue('');
+      setTargetSizeError(null);
       return;
+    }
+
+    // Set intelligent default target size once per loaded file
+    if (activeFile.id !== prevFileIdRef.current) {
+      prevFileIdRef.current = activeFile.id;
+      if (activeFile.size >= 1024 * 1024) {
+        const mb = Math.max(0.5, Math.round((activeFile.size / (1024 * 1024)) * 0.7 * 10) / 10);
+        setTargetSizeValue(mb.toString());
+        setTargetSizeUnit('MB');
+      } else {
+        const kb = Math.max(50, Math.round((activeFile.size / 1024) * 0.7));
+        setTargetSizeValue(kb.toString());
+        setTargetSizeUnit('KB');
+      }
+      setTargetSizeError(null);
     }
 
     setIsAnalyzing(true);
@@ -107,8 +133,25 @@ export const CompressToolPage: FC = () => {
 
   const allErrors = [...pipelineErrors, ...operationErrors];
 
+  const handleTargetSizeChange = (val: string, unit: TargetSizeUnit) => {
+    setTargetSizeValue(val);
+    setTargetSizeUnit(unit);
+    const { error } = parseTargetSizeBytes(val, unit);
+    setTargetSizeError(error);
+  };
+
   const handleCompress = async () => {
     if (!activeFile || isProcessing) return;
+
+    let targetSizeBytes: number | undefined;
+    if (selectedMode === 'target') {
+      const { bytes, error } = parseTargetSizeBytes(targetSizeValue, targetSizeUnit);
+      if (error || !bytes) {
+        setTargetSizeError(error || 'Please enter a valid target file size.');
+        return;
+      }
+      targetSizeBytes = bytes;
+    }
 
     setIsProcessing(true);
     setProgressPercent(0);
@@ -121,6 +164,7 @@ export const CompressToolPage: FC = () => {
 
       const result = await compressPdfDocument(bytes, {
         mode: selectedMode,
+        targetSizeBytes,
         onProgress: (stage, pct) => {
           setProgressStage(stage);
           setProgressPercent(pct);
@@ -143,6 +187,8 @@ export const CompressToolPage: FC = () => {
     setCharacteristics(null);
     setCompressionResult(null);
     setOperationErrors([]);
+    setTargetSizeValue('');
+    setTargetSizeError(null);
   };
 
   return (
@@ -164,13 +210,10 @@ export const CompressToolPage: FC = () => {
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-6 border-b border-border">
             <div className="flex items-center gap-4">
               <div className="w-14 h-14 rounded-xl bg-emerald/10 text-emerald dark:bg-emerald/20 dark:text-emerald flex items-center justify-center shrink-0">
-                <Minimize2 className="w-7 h-7" aria-hidden="true" />
+                <ToolIcon toolId="compress" className="w-7 h-7" weight="duotone" aria-hidden="true" />
               </div>
               <div>
                 <div className="flex items-center gap-2 mb-1">
-                  <Badge variant="success" size="sm">
-                    Client-Side Engine Active
-                  </Badge>
                   <Badge variant="outline" size="sm">
                     Optimize
                   </Badge>
@@ -249,7 +292,7 @@ export const CompressToolPage: FC = () => {
                     className="text-muted-foreground hover:text-foreground"
                     title="Change document"
                   >
-                    <RotateCcw className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" />
+                    <ArrowCounterClockwise className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" />
                     <span>Change File</span>
                   </Button>
                 </div>
@@ -270,7 +313,7 @@ export const CompressToolPage: FC = () => {
                           <ImageIcon className="w-3 h-3 mr-1 inline" aria-hidden="true" />
                         )}
                         {characteristics.contentType === 'text-vector' && (
-                          <Sparkles className="w-3 h-3 mr-1 inline" aria-hidden="true" />
+                          <Sparkle className="w-3 h-3 mr-1 inline" aria-hidden="true" />
                         )}
                         {characteristics.contentType.replace('-', ' ')}
                       </Badge>
@@ -290,6 +333,11 @@ export const CompressToolPage: FC = () => {
                   selectedMode={selectedMode}
                   onChange={setSelectedMode}
                   disabled={isProcessing}
+                  targetSizeValue={targetSizeValue}
+                  targetSizeUnit={targetSizeUnit}
+                  onTargetSizeChange={handleTargetSizeChange}
+                  formattedOriginalSize={activeFile.formattedSize}
+                  targetSizeError={targetSizeError}
                 />
 
                 <div className="pt-6 mt-6 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-4">
@@ -299,7 +347,12 @@ export const CompressToolPage: FC = () => {
 
                   <Button
                     size="lg"
-                    disabled={!isValidForAction || isProcessing || isAnalyzing}
+                    disabled={
+                      !isValidForAction ||
+                      isProcessing ||
+                      isAnalyzing ||
+                      (selectedMode === 'target' && (!!targetSizeError || !targetSizeValue.trim()))
+                    }
                     onClick={handleCompress}
                     className="w-full sm:w-auto shadow-sm"
                   >
@@ -328,7 +381,6 @@ export const CompressToolPage: FC = () => {
                       },
                     ]}
                     toolName="Compressed PDF"
-                    toolIdentifier="[TOOL // 09 · STREAM COMPACTOR]"
                     onBackToEditing={() => setCompressionResult(null)}
                     onReset={handleReset}
                   />
@@ -353,7 +405,7 @@ export const CompressToolPage: FC = () => {
 
             <Card className="border-border bg-card">
               <CardContent className="p-5 flex items-start gap-3">
-                <Zap className="w-5 h-5 text-primary shrink-0 mt-0.5" aria-hidden="true" />
+                <Lightning className="w-5 h-5 text-primary shrink-0 mt-0.5" aria-hidden="true" />
                 <div>
                   <h3 className="text-sm font-semibold text-foreground">Zero Text Degradation</h3>
                   <p className="text-xs text-muted-foreground mt-1 leading-relaxed">

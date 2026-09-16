@@ -1,5 +1,5 @@
 import type { FC } from 'react';
-import { Sun, Moon } from 'lucide-react';
+import { Sun, Moon } from '@/components/icons';
 import { useTheme } from '@/hooks/useTheme';
 
 export const ThemeToggle: FC = () => {

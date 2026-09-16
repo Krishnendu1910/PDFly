@@ -1,6 +1,6 @@
 import { type FC } from 'react';
 import { Link } from 'react-router-dom';
-import { FileQuestion, ArrowLeft } from 'lucide-react';
+import { Question, ArrowLeft } from '@/components/icons';
 import { ROUTES } from '@/constants/routes';
 import { Container } from '@/components/ui/Container';
 import { Button } from '@/components/ui/Button';
@@ -12,7 +12,7 @@ export const NotFoundPage: FC = () => {
     <div className="py-24 sm:py-32">
       <Container size="sm" className="text-center">
         <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-muted text-muted-foreground mb-6">
-          <FileQuestion className="w-8 h-8" aria-hidden="true" />
+          <Question className="w-8 h-8" aria-hidden="true" />
         </div>
 
         <h1 className="text-5xl sm:text-6xl font-extrabold text-foreground tracking-tight mb-3">

@@ -1,5 +1,5 @@
 import type { FC } from 'react';
-import { Layers, Scissors, RotateCw, ArrowUpDown, FileMinus, FileOutput, Check } from 'lucide-react';
+import { Stack, Scissors, ArrowClockwise, ArrowsDownUp, FileMinus, Export, Check } from '@/components/icons';
 
 export const OrganizeVisual: FC = () => {
   return (
@@ -8,7 +8,7 @@ export const OrganizeVisual: FC = () => {
       <div className="flex items-center justify-between pb-4 border-b border-border text-xs">
         <div className="flex items-center gap-2">
           <span className="w-6 h-6 rounded bg-cobalt/10 text-cobalt flex items-center justify-center font-bold">
-            <ArrowUpDown className="w-3.5 h-3.5" />
+            <ArrowsDownUp className="w-3.5 h-3.5" />
           </span>
           <span className="font-semibold text-foreground">Interactive Page Sequence</span>
         </div>
@@ -34,7 +34,7 @@ export const OrganizeVisual: FC = () => {
         <div className="relative p-2.5 rounded-lg border border-amber/30 bg-amber/5 flex flex-col justify-between aspect-[3/4] shadow-xs ring-1 ring-amber/20">
           <div className="flex items-center justify-between">
             <span className="text-[10px] font-mono text-amber font-bold">02</span>
-            <RotateCw className="w-3 h-3 text-amber" />
+            <ArrowClockwise className="w-3 h-3 text-amber" />
           </div>
           <div className="space-y-1 my-auto rotate-90 scale-90">
             <div className="h-1.5 w-full bg-amber/30 rounded" />
@@ -47,7 +47,7 @@ export const OrganizeVisual: FC = () => {
         <div className="relative p-2.5 rounded-lg border border-violet/30 bg-violet/5 flex flex-col justify-between aspect-[3/4] shadow-xs ring-1 ring-violet/20">
           <div className="flex items-center justify-between">
             <span className="text-[10px] font-mono text-violet font-bold">03</span>
-            <ArrowUpDown className="w-3 h-3 text-violet" />
+            <ArrowsDownUp className="w-3 h-3 text-violet" />
           </div>
           <div className="space-y-1 my-auto">
             <div className="h-1.5 w-full bg-violet/30 rounded" />
@@ -72,7 +72,7 @@ export const OrganizeVisual: FC = () => {
         <div className="relative p-2.5 rounded-lg border border-teal/30 bg-teal/5 flex flex-col justify-between aspect-[3/4] shadow-xs ring-1 ring-teal/20">
           <div className="flex items-center justify-between">
             <span className="text-[10px] font-mono text-teal font-bold">05</span>
-            <FileOutput className="w-3 h-3 text-teal" />
+            <Export className="w-3 h-3 text-teal" />
           </div>
           <div className="space-y-1 my-auto">
             <div className="h-1.5 w-full bg-teal/30 rounded" />
@@ -85,7 +85,7 @@ export const OrganizeVisual: FC = () => {
         <div className="relative p-2.5 rounded-lg border border-cobalt/30 bg-cobalt/5 flex flex-col justify-between aspect-[3/4] shadow-xs ring-1 ring-cobalt/20">
           <div className="flex items-center justify-between">
             <span className="text-[10px] font-mono text-cobalt font-bold">06</span>
-            <Layers className="w-3 h-3 text-cobalt" />
+            <Stack className="w-3 h-3 text-cobalt" />
           </div>
           <div className="space-y-1 my-auto">
             <div className="h-1.5 w-full bg-cobalt/30 rounded" />

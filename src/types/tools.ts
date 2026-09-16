@@ -1,4 +1,4 @@
-import type { LucideIcon } from 'lucide-react';
+import type { PDFlyIcon } from '@/components/icons';
 
 export type ToolId =
   | 'merge'
@@ -26,7 +26,7 @@ export interface ToolDefinition {
   description: string;
   shortDescription?: string;
   iconName: string;
-  icon: LucideIcon;
+  icon: PDFlyIcon;
   category: 'organize' | 'convert' | 'optimize' | 'edit' | 'security';
   badge?: string;
   popular?: boolean;

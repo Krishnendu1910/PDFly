@@ -1,5 +1,5 @@
 import { type FC } from 'react';
-import { AlertCircle, X } from 'lucide-react';
+import { WarningCircle, X } from '@/components/icons';
 import type { FileValidationError } from '@/types/file';
 
 export interface FileErrorBannerProps {
@@ -18,7 +18,7 @@ export const FileErrorBanner: FC<FileErrorBannerProps> = ({ errors, onDismiss, t
       className="p-4 rounded-xl border border-destructive/30 bg-destructive/10 text-destructive-foreground flex items-start justify-between gap-3 shadow-xs animate-in fade-in duration-150"
     >
       <div className="flex items-start gap-3 min-w-0">
-        <AlertCircle className="w-5 h-5 text-destructive shrink-0 mt-0.5" aria-hidden="true" />
+        <WarningCircle className="w-5 h-5 text-destructive shrink-0 mt-0.5" aria-hidden="true" />
         <div className="space-y-1 text-sm">
           <p className="font-semibold text-foreground">
             {title || (errors.length === 1 ? 'Unable to add file' : `${errors.length} files could not be added`)}

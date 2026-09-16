@@ -1,16 +1,16 @@
 import { useState, useEffect, type FC } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  FileMinus,
+  ToolIcon,
   ArrowLeft,
   ArrowRight,
   ShieldCheck,
-  Zap,
-  RotateCcw,
+  Lightning,
+  ArrowCounterClockwise,
   CheckSquare,
   Square,
-  CheckCircle2,
-} from 'lucide-react';
+  CheckCircle,
+} from '@/components/icons';
 import { ROUTES } from '@/constants/routes';
 import { PDF_ONLY_CONFIG } from '@/constants/file';
 import { useFilePipeline } from '@/hooks/useFilePipeline';
@@ -219,13 +219,10 @@ export const RemovePagesToolPage: FC = () => {
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-6 border-b border-border">
             <div className="flex items-center gap-4">
               <div className="w-14 h-14 rounded-xl bg-vermillion/10 text-vermillion dark:bg-vermillion/20 dark:text-vermillion flex items-center justify-center shrink-0">
-                <FileMinus className="w-7 h-7" aria-hidden="true" />
+                <ToolIcon toolId="remove-pages" className="w-7 h-7" weight="duotone" aria-hidden="true" />
               </div>
               <div>
                 <div className="flex items-center gap-2 mb-1">
-                  <Badge variant="success" size="sm">
-                    Client-Side Engine Active
-                  </Badge>
                   <Badge variant="outline" size="sm">
                     Organize
                   </Badge>
@@ -266,7 +263,6 @@ export const RemovePagesToolPage: FC = () => {
           <DownloadResultDocket
             outputs={[outputResult]}
             toolName="Pruned Document"
-            toolIdentifier="[TOOL // 07 · PAGE PRUNER]"
             onBackToEditing={() => setOutputResult(null)}
             onReset={handleReset}
           />
@@ -329,7 +325,7 @@ export const RemovePagesToolPage: FC = () => {
                       disabled={isProcessing || pages.length === 0}
                       title="Invert selection"
                     >
-                      <RotateCcw className="w-3.5 h-3.5 mr-1" aria-hidden="true" />
+                      <ArrowCounterClockwise className="w-3.5 h-3.5 mr-1" aria-hidden="true" />
                       <span>Invert</span>
                     </Button>
 
@@ -383,7 +379,7 @@ export const RemovePagesToolPage: FC = () => {
                       </span>
                     ) : (
                       <span className="text-emerald-600 dark:text-emerald-400 font-medium flex items-center gap-1">
-                        <CheckCircle2 className="w-4 h-4 inline" aria-hidden="true" />
+                        <CheckCircle className="w-4 h-4 inline" aria-hidden="true" />
                         Removing {selectedPages.size} {selectedPages.size === 1 ? 'page' : 'pages'} ({remainingCount} remaining).
                       </span>
                     )}
@@ -419,7 +415,7 @@ export const RemovePagesToolPage: FC = () => {
 
               <Card className="border-border bg-card">
                 <CardContent className="p-5 flex items-start gap-3">
-                  <Zap className="w-5 h-5 text-primary shrink-0 mt-0.5" aria-hidden="true" />
+                  <Lightning className="w-5 h-5 text-primary shrink-0 mt-0.5" aria-hidden="true" />
                   <div>
                     <h3 className="text-sm font-semibold text-foreground">Lossless Recompilation</h3>
                     <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
@@ -437,7 +433,7 @@ export const RemovePagesToolPage: FC = () => {
       <ProcessingOverlay
         isOpen={isProcessing}
         title="Removing pages..."
-        subtitle="Extracting remaining pages in browser memory..."
+        subtitle="Extracting remaining pages..."
         progressPercent={progressPercent}
       />
     </div>

@@ -6,7 +6,7 @@ import {
   type DragEvent,
   type ChangeEvent,
 } from 'react';
-import { UploadCloud, FileUp } from 'lucide-react';
+import { UploadSimple, FileArrowUp } from '@/components/icons';
 import { cn } from '@/lib/utils/cn';
 import type { FileValidationConfig } from '@/types/file';
 import { formatFileSize } from '@/lib/utils/file';
@@ -143,9 +143,9 @@ export const Dropzone: FC<DropzoneProps> = ({
           aria-hidden="true"
         >
           {isDragOver ? (
-            <FileUp className="w-8 h-8 animate-bounce" />
+            <FileArrowUp className="w-8 h-8 animate-bounce" />
           ) : (
-            <UploadCloud className="w-8 h-8" />
+            <UploadSimple className="w-8 h-8" />
           )}
         </div>
 

@@ -1,6 +1,13 @@
 import { useState, useEffect, useRef, type FC } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { FileText, Menu, X, ChevronDown, LayoutGrid, ArrowRight } from "lucide-react";
+import {
+  FileText,
+  List,
+  X,
+  CaretDown,
+  SquaresFour,
+  ArrowRight,
+} from "@/components/icons";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { ROUTES } from "@/constants/routes";
 import { TOOL_MAP } from "@/constants/tools";
@@ -117,9 +124,9 @@ export const Header: FC = () => {
                     : "text-foreground hover:bg-muted/70",
                 )}
               >
-                <LayoutGrid className="w-4 h-4 text-primary" aria-hidden="true" />
+                <SquaresFour className="w-4 h-4 text-primary" aria-hidden="true" />
                 <span>Tools</span>
-                <ChevronDown
+                <CaretDown
                   className={cn(
                     "w-3.5 h-3.5 text-muted-foreground transition-transform duration-150",
                     toolsDropdownOpen && "rotate-180",
@@ -274,7 +281,7 @@ export const Header: FC = () => {
               {mobileMenuOpen ? (
                 <X className="w-5 h-5" aria-hidden="true" />
               ) : (
-                <Menu className="w-5 h-5" aria-hidden="true" />
+                <List className="w-5 h-5" aria-hidden="true" />
               )}
             </button>
           </div>

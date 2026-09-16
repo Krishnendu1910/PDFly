@@ -1,7 +1,7 @@
 import { type FC } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, useReducedMotion } from 'framer-motion';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight } from '@/components/icons';
 import { ROUTES } from '@/constants/routes';
 import { getToolTheme } from '@/lib/theme/toolTheme';
 import { cn } from '@/lib/utils/cn';

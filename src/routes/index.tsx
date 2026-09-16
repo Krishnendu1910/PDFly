@@ -1,6 +1,6 @@
 import { lazy, Suspense } from 'react';
 import { createBrowserRouter, type RouteObject } from 'react-router-dom';
-import { Loader2 } from 'lucide-react';
+import { CircleNotch } from '@/components/icons';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { HomePage } from '@/pages/Home/HomePage';
 import { AboutPage } from '@/pages/About/AboutPage';
@@ -57,7 +57,7 @@ const ProtectToolPage = lazy(() =>
 
 const loadingFallback = (
   <div className="py-24 flex flex-col items-center justify-center text-center space-y-3" role="status">
-    <Loader2 className="w-8 h-8 text-primary animate-spin" aria-hidden="true" />
+    <CircleNotch className="w-8 h-8 text-primary animate-spin" aria-hidden="true" />
     <span className="text-sm font-medium text-muted-foreground">Loading toolkit engine...</span>
   </div>
 );

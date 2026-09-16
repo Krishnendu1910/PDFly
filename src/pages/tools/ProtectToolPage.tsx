@@ -1,17 +1,18 @@
 import { useState, useEffect, useMemo, type FC } from 'react';
 import { Link } from 'react-router-dom';
 import {
+  ToolIcon,
   ShieldCheck,
   ArrowLeft,
   ArrowRight,
-  Lock,
-  Unlock,
+  LockKey,
+  LockKeyOpen,
   Eye,
-  EyeOff,
-  CheckCircle2,
-  AlertCircle,
-  Zap,
-} from 'lucide-react';
+  EyeSlash,
+  CheckCircle,
+  WarningCircle,
+  Lightning,
+} from '@/components/icons';
 import { ROUTES } from '@/constants/routes';
 import { PDF_ONLY_CONFIG } from '@/constants/file';
 import { useFilePipeline } from '@/hooks/useFilePipeline';
@@ -253,13 +254,10 @@ export const ProtectToolPage: FC = () => {
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-6 border-b border-border">
             <div className="flex items-center gap-4">
               <div className="w-14 h-14 rounded-xl bg-emerald/10 text-emerald dark:bg-emerald/20 flex items-center justify-center shrink-0">
-                <ShieldCheck className="w-7 h-7" aria-hidden="true" />
+                <ToolIcon toolId="protect" className="w-7 h-7" weight="duotone" aria-hidden="true" />
               </div>
               <div>
                 <div className="flex items-center gap-2 mb-1">
-                  <Badge variant="success" size="sm">
-                    QPDF WASM Engine Active
-                  </Badge>
                   <Badge variant="outline" size="sm">
                     Security
                   </Badge>
@@ -307,7 +305,6 @@ export const ProtectToolPage: FC = () => {
           <DownloadResultDocket
             outputs={[outputResult]}
             toolName={mode === 'protect' ? 'Protected Document' : 'Unlocked Document'}
-            toolIdentifier="[TOOL // 15 · PDF PROTECTOR]"
             onBackToEditing={() => setOutputResult(null)}
             onReset={handleReset}
           />
@@ -370,7 +367,7 @@ export const ProtectToolPage: FC = () => {
                         : 'text-muted-foreground hover:text-foreground hover:bg-muted/60'
                     }`}
                   >
-                    <Lock className="w-4 h-4" aria-hidden="true" />
+                    <LockKey className="w-4 h-4" aria-hidden="true" />
                     <span>Protect PDF</span>
                   </button>
                   <button
@@ -382,7 +379,7 @@ export const ProtectToolPage: FC = () => {
                         : 'text-muted-foreground hover:text-foreground hover:bg-muted/60'
                     }`}
                   >
-                    <Unlock className="w-4 h-4" aria-hidden="true" />
+                    <LockKeyOpen className="w-4 h-4" aria-hidden="true" />
                     <span>Unlock PDF</span>
                   </button>
                 </div>
@@ -392,7 +389,7 @@ export const ProtectToolPage: FC = () => {
                   <div className="space-y-6 max-w-xl">
                     {detectionState === 'PROTECTED' && (
                       <div className="p-3.5 rounded-lg border border-amber/30 bg-amber/10 flex items-start gap-2.5 text-xs text-amber-600 dark:text-amber-400">
-                        <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" aria-hidden="true" />
+                        <WarningCircle className="w-4 h-4 shrink-0 mt-0.5" aria-hidden="true" />
                         <div>
                           <strong>This PDF is already password-protected.</strong> To set a new password, unlock it first in Unlock mode.
                         </div>
@@ -428,7 +425,7 @@ export const ProtectToolPage: FC = () => {
                             className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring rounded p-1"
                             aria-label={showUserPassword ? 'Hide password' : 'Show password'}
                           >
-                            {showUserPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                            {showUserPassword ? <EyeSlash className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                           </button>
                         </div>
 
@@ -476,7 +473,7 @@ export const ProtectToolPage: FC = () => {
                             className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring rounded p-1"
                             aria-label={showConfirmPassword ? 'Hide confirmed password' : 'Show confirmed password'}
                           >
-                            {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                            {showConfirmPassword ? <EyeSlash className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                           </button>
                         </div>
                         {confirmPassword && !passwordsMatch && (
@@ -537,7 +534,7 @@ export const ProtectToolPage: FC = () => {
                       <span className="text-muted-foreground">Standard Encryption:</span>
                       <span className="font-semibold text-emerald flex items-center gap-1.5">
                         <span>AES-256 (Revision 6)</span>
-                        <CheckCircle2 className="w-3.5 h-3.5" aria-hidden="true" />
+                        <CheckCircle className="w-3.5 h-3.5" aria-hidden="true" />
                       </span>
                     </div>
 
@@ -555,13 +552,13 @@ export const ProtectToolPage: FC = () => {
                         onClick={handleProtect}
                         className="w-full sm:w-auto shadow-sm"
                       >
-                        <Lock className="w-4 h-4 mr-2" aria-hidden="true" />
+                        <LockKey className="w-4 h-4 mr-2" aria-hidden="true" />
                         <span>Protect PDF</span>
                         <ArrowRight className="w-4 h-4 ml-2" aria-hidden="true" />
                       </Button>
 
                       <p className="text-xs text-muted-foreground flex items-center gap-1.5">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald shrink-0" aria-hidden="true" />
+                        <CheckCircle className="w-3.5 h-3.5 text-emerald shrink-0" aria-hidden="true" />
                         <span>Your PDF and password are processed locally in your browser. No upload required.</span>
                       </p>
                     </div>
@@ -573,7 +570,7 @@ export const ProtectToolPage: FC = () => {
                   <div className="space-y-6 max-w-xl">
                     {detectionState === 'UNPROTECTED' && (
                       <div className="p-3.5 rounded-lg border border-emerald/30 bg-emerald/10 flex items-start gap-2.5 text-xs text-emerald-600 dark:text-emerald-400">
-                        <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" aria-hidden="true" />
+                        <CheckCircle className="w-4 h-4 shrink-0 mt-0.5" aria-hidden="true" />
                         <div>
                           <strong>This PDF is not password-protected.</strong> You can already view and edit this document without a password.
                         </div>
@@ -607,7 +604,7 @@ export const ProtectToolPage: FC = () => {
                           className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring rounded p-1"
                           aria-label={showUnlockPassword ? 'Hide password' : 'Show password'}
                         >
-                          {showUnlockPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                          {showUnlockPassword ? <EyeSlash className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                         </button>
                       </div>
                     </div>
@@ -620,13 +617,13 @@ export const ProtectToolPage: FC = () => {
                         onClick={handleUnlock}
                         className="w-full sm:w-auto shadow-sm"
                       >
-                        <Unlock className="w-4 h-4 mr-2" aria-hidden="true" />
+                        <LockKeyOpen className="w-4 h-4 mr-2" aria-hidden="true" />
                         <span>Unlock PDF</span>
                         <ArrowRight className="w-4 h-4 ml-2" aria-hidden="true" />
                       </Button>
 
                       <p className="text-xs text-muted-foreground flex items-center gap-1.5">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald shrink-0" aria-hidden="true" />
+                        <CheckCircle className="w-3.5 h-3.5 text-emerald shrink-0" aria-hidden="true" />
                         <span>Your PDF and password are processed locally in your browser. No upload required.</span>
                       </p>
                     </div>
@@ -651,7 +648,7 @@ export const ProtectToolPage: FC = () => {
 
               <Card className="border-border bg-card">
                 <CardContent className="p-5 flex items-start gap-3">
-                  <Zap className="w-5 h-5 text-primary shrink-0 mt-0.5" aria-hidden="true" />
+                  <Lightning className="w-5 h-5 text-primary shrink-0 mt-0.5" aria-hidden="true" />
                   <div>
                     <h3 className="text-sm font-semibold text-foreground">Zero Network Transmission</h3>
                     <p className="text-xs text-muted-foreground mt-1 leading-relaxed">

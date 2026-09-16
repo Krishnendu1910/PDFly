@@ -1,5 +1,5 @@
 import type { FC } from 'react';
-import { Images, FileImage, FileCode, FileText, ArrowRight, Check } from 'lucide-react';
+import { Images, FileImage, FileCode, FileText, ArrowRight, Check } from '@/components/icons';
 
 export const ConvertVisual: FC = () => {
   return (

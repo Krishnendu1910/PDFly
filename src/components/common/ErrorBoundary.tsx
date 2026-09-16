@@ -1,5 +1,5 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react';
-import { AlertTriangle, RefreshCw, Home } from 'lucide-react';
+import { Warning, ArrowsClockwise, House } from '@/components/icons';
 
 interface ErrorBoundaryProps {
   children: ReactNode;
@@ -50,7 +50,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
         >
           <div className="max-w-md w-full p-8 bg-white dark:bg-slate-900 rounded-xl shadow-lg border border-slate-200 dark:border-slate-800 text-center">
             <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-red-100 dark:bg-red-950/50 text-red-600 dark:text-red-400 mb-4">
-              <AlertTriangle className="w-7 h-7" aria-hidden="true" />
+              <Warning className="w-7 h-7" aria-hidden="true" />
             </div>
             <h1 className="text-xl font-semibold mb-2">Something went wrong</h1>
             <p className="text-sm text-slate-600 dark:text-slate-400 mb-6">
@@ -67,7 +67,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
                 onClick={this.handleReload}
                 className="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500"
               >
-                <RefreshCw className="w-4 h-4" aria-hidden="true" />
+                <ArrowsClockwise className="w-4 h-4" aria-hidden="true" />
                 Reload Page
               </button>
               <button
@@ -75,7 +75,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
                 onClick={this.handleReset}
                 className="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium rounded-lg border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500"
               >
-                <Home className="w-4 h-4" aria-hidden="true" />
+                <House className="w-4 h-4" aria-hidden="true" />
                 Return Home
               </button>
             </div>

@@ -1,6 +1,6 @@
 import { useState, useEffect, type FC } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowUpDown, ArrowLeft, ArrowRight, ShieldCheck, Zap, RotateCcw } from 'lucide-react';
+import { ToolIcon, ArrowLeft, ArrowRight, ShieldCheck, Lightning, ArrowCounterClockwise } from '@/components/icons';
 import { ROUTES } from '@/constants/routes';
 import { PDF_ONLY_CONFIG } from '@/constants/file';
 import { useFilePipeline } from '@/hooks/useFilePipeline';
@@ -225,13 +225,10 @@ export const ReorderToolPage: FC = () => {
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-6 border-b border-border">
             <div className="flex items-center gap-4">
               <div className="w-14 h-14 rounded-xl bg-violet/10 text-violet dark:bg-violet/20 dark:text-violet flex items-center justify-center shrink-0">
-                <ArrowUpDown className="w-7 h-7" aria-hidden="true" />
+                <ToolIcon toolId="reorder" className="w-7 h-7" weight="duotone" aria-hidden="true" />
               </div>
               <div>
                 <div className="flex items-center gap-2 mb-1">
-                  <Badge variant="success" size="sm">
-                    Client-Side Engine Active
-                  </Badge>
                   <Badge variant="outline" size="sm">
                     Organize
                   </Badge>
@@ -272,7 +269,6 @@ export const ReorderToolPage: FC = () => {
           <DownloadResultDocket
             outputs={[outputResult]}
             toolName="Reordered PDF"
-            toolIdentifier="[TOOL // 03 · LIGHT TABLE]"
             onBackToEditing={() => setOutputResult(null)}
             onReset={() => {
               setOutputResult(null);
@@ -315,7 +311,7 @@ export const ReorderToolPage: FC = () => {
                       disabled={isProcessing || pages.length <= 1}
                       className="text-xs"
                     >
-                      <RotateCcw className="w-3.5 h-3.5 mr-1" aria-hidden="true" />
+                      <ArrowCounterClockwise className="w-3.5 h-3.5 mr-1" aria-hidden="true" />
                       Reset Order
                     </Button>
 
@@ -410,7 +406,7 @@ export const ReorderToolPage: FC = () => {
 
               <Card className="border-border bg-card">
                 <CardContent className="p-5 flex items-start gap-3">
-                  <Zap className="w-5 h-5 text-primary shrink-0 mt-0.5" aria-hidden="true" />
+                  <Lightning className="w-5 h-5 text-primary shrink-0 mt-0.5" aria-hidden="true" />
                   <div>
                     <h3 className="text-sm font-semibold text-foreground">Lossless Reordering</h3>
                     <p className="text-xs text-muted-foreground mt-1 leading-relaxed">

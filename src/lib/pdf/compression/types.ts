@@ -1,4 +1,4 @@
-export type CompressionMode = 'quality' | 'balanced' | 'strong';
+export type CompressionMode = 'quality' | 'balanced' | 'strong' | 'target';
 
 export type PdfContentType = 'image-heavy' | 'text-vector' | 'mixed';
 
@@ -12,6 +12,7 @@ export interface PdfCharacteristics {
 
 export interface CompressionOptions {
   mode?: CompressionMode;
+  targetSizeBytes?: number;
   onProgress?: (stage: string, percent: number) => void;
 }
 
@@ -24,5 +25,7 @@ export interface CompressionResult {
   isReduced: boolean;
   characteristics: PdfCharacteristics;
   outputBytes: Uint8Array;
+  targetSizeBytes?: number;
+  targetReached?: boolean;
 }
 

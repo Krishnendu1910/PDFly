@@ -1,13 +1,12 @@
 import { useState, useId, type FC } from 'react';
 import {
-  Download,
-  CheckCircle2,
-  RefreshCw,
-  FileCheck,
-  Layers,
+  DownloadSimple,
+  CheckCircle,
+  ArrowsClockwise,
+  FilePdf,
   Eye,
   ArrowLeft,
-} from 'lucide-react';
+} from '@/components/icons';
 import { Button } from '@/components/ui/Button';
 import { downloadPdfBytes } from '@/lib/pdf/utils/download';
 import { formatFileSize } from '@/lib/utils/file';
@@ -41,7 +40,7 @@ export interface DownloadResultDocketProps {
 export const DownloadResultDocket: FC<DownloadResultDocketProps> = ({
   outputs,
   toolName = 'Document',
-  toolIdentifier = '[DISCHARGE // IN-MEMORY]',
+  toolIdentifier: _toolIdentifier,
   isSplitBatch = false,
   onReset,
   onBackToEditing,
@@ -170,44 +169,22 @@ export const DownloadResultDocket: FC<DownloadResultDocketProps> = ({
 
     return (
       <section
-        aria-label="Document discharge docket"
-        className={`relative border border-border rounded-[4px] bg-card p-6 sm:p-8 space-y-6 shadow-none select-none transition-all ${className}`}
+        aria-label="Document download docket"
+        className={`relative border border-border rounded-xl bg-card p-6 sm:p-8 space-y-6 shadow-xs select-none transition-all ${className}`}
       >
-        {/* Architectural Corner Crop Marks */}
-        <span className="absolute top-2 left-2 text-[10px] font-mono text-muted-foreground/60 select-none leading-none">┌</span>
-        <span className="absolute top-2 right-2 text-[10px] font-mono text-muted-foreground/60 select-none leading-none">┐</span>
-        <span className="absolute bottom-2 left-2 text-[10px] font-mono text-muted-foreground/60 select-none leading-none">└</span>
-        <span className="absolute bottom-2 right-2 text-[10px] font-mono text-muted-foreground/60 select-none leading-none">┘</span>
-
-        {/* Status Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border pb-4">
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-emerald" aria-hidden="true" />
-            <span className="font-mono text-xs uppercase tracking-wider text-emerald font-semibold">
-              {toolIdentifier}
+        {/* Main Docket Content */}
+        <div className="space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border pb-4">
+            <h2 className="font-display font-bold text-xl sm:text-2xl text-foreground tracking-tight uppercase">
+              {`${toolName} Result Ready`}
+            </h2>
+            <span className="font-mono text-xs font-semibold text-muted-foreground">
+              {formattedSize}
             </span>
           </div>
 
-          <div className="flex items-center gap-3 font-mono text-xs text-muted-foreground uppercase">
-            <span>PDF // BINARY STREAM</span>
-            <span>·</span>
-            <span className="font-semibold text-foreground">{formattedSize}</span>
-          </div>
-        </div>
-
-        {/* Main Docket Content */}
-        <div className="space-y-4">
-          <div>
-            <h2 className="font-display font-bold text-xl sm:text-2xl text-foreground tracking-tight uppercase">
-              {toolName} Result Ready
-            </h2>
-            <p className="text-xs sm:text-sm text-muted-foreground mt-1 leading-relaxed">
-              Your document has been assembled directly in local browser memory. Verify or update the output filename before downloading.
-            </p>
-          </div>
-
           {/* Filename Input Field */}
-          <div className="space-y-2 pt-2">
+          <div className="space-y-2 pt-1">
             <label
               htmlFor={singleInputId}
               className="block font-mono text-xs uppercase tracking-wider text-foreground font-semibold"
@@ -215,7 +192,7 @@ export const DownloadResultDocket: FC<DownloadResultDocketProps> = ({
               Output Filename
             </label>
 
-            <div className="flex items-stretch rounded-[3px] border border-border bg-background focus-within:ring-2 focus-within:ring-primary focus-within:border-primary transition-all overflow-hidden max-w-xl">
+            <div className="flex items-stretch rounded-lg border border-border bg-background focus-within:ring-2 focus-within:ring-primary focus-within:border-primary transition-all overflow-hidden max-w-xl">
               <input
                 id={singleInputId}
                 type="text"
@@ -229,21 +206,11 @@ export const DownloadResultDocket: FC<DownloadResultDocketProps> = ({
                 }}
                 placeholder="Enter filename"
                 aria-label="Output filename"
-                className="flex-1 px-3.5 py-2 font-mono text-xs sm:text-sm text-foreground placeholder:text-muted-foreground bg-transparent focus:outline-none"
+                className="flex-1 px-3.5 py-2.5 font-mono text-xs sm:text-sm text-foreground placeholder:text-muted-foreground bg-transparent focus:outline-none"
               />
-              <div className="px-3 flex items-center justify-center font-mono text-xs text-muted-foreground border-l border-border bg-muted/30 select-none">
+              <div className="px-3.5 flex items-center justify-center font-mono text-xs text-muted-foreground border-l border-border bg-muted/30 select-none">
                 .pdf
               </div>
-            </div>
-
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 font-mono text-[11px] text-muted-foreground pt-1">
-              <span>
-                Target designation:{' '}
-                <strong className="text-foreground">{sanitizedPreview}</strong>
-              </span>
-              <span className="text-[10px] text-muted-foreground/80">
-                (Extension added automatically)
-              </span>
             </div>
           </div>
         </div>
@@ -257,7 +224,7 @@ export const DownloadResultDocket: FC<DownloadResultDocketProps> = ({
                 variant="outline"
                 size="md"
                 onClick={onBackToEditing}
-                className="font-mono text-xs uppercase tracking-wider"
+                className="text-xs font-semibold"
               >
                 <ArrowLeft className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" />
                 <span>Back to Editing</span>
@@ -270,9 +237,9 @@ export const DownloadResultDocket: FC<DownloadResultDocketProps> = ({
                 variant="outline"
                 size="md"
                 onClick={onReset}
-                className="font-mono text-xs uppercase tracking-wider"
+                className="text-xs font-semibold"
               >
-                <RefreshCw className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" />
+                <ArrowsClockwise className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" />
                 <span>Process Another Document</span>
               </Button>
             )}
@@ -283,10 +250,10 @@ export const DownloadResultDocket: FC<DownloadResultDocketProps> = ({
               <span
                 role="status"
                 aria-live="polite"
-                className="hidden sm:inline-flex items-center gap-1.5 font-mono text-xs text-emerald uppercase"
+                className="hidden sm:inline-flex items-center gap-1.5 text-xs font-medium text-emerald"
               >
-                <CheckCircle2 className="w-4 h-4" aria-hidden="true" />
-                <span>Discharged</span>
+                <CheckCircle className="w-4 h-4" aria-hidden="true" />
+                <span>Downloaded</span>
               </span>
             )}
 
@@ -295,7 +262,7 @@ export const DownloadResultDocket: FC<DownloadResultDocketProps> = ({
               variant="outline"
               size="md"
               onClick={() => setIsPreviewOpen(true)}
-              className="font-mono text-xs uppercase tracking-wider font-semibold"
+              className="text-xs font-semibold"
             >
               <Eye className="w-4 h-4 mr-1.5" aria-hidden="true" />
               <span>Preview PDF</span>
@@ -307,10 +274,10 @@ export const DownloadResultDocket: FC<DownloadResultDocketProps> = ({
               size="md"
               disabled={isDownloadingSingle}
               onClick={handleDownloadSingle}
-              className="font-mono text-xs uppercase tracking-wider w-full sm:w-auto font-semibold"
+              className="text-xs font-semibold w-full sm:w-auto"
             >
-              <Download className="w-4 h-4 mr-1.5" aria-hidden="true" />
-              <span>{isDownloadingSingle ? 'Discharging...' : 'Download PDF'}</span>
+              <DownloadSimple className="w-4 h-4 mr-1.5" aria-hidden="true" />
+              <span>{isDownloadingSingle ? 'Downloading...' : 'Download PDF'}</span>
             </Button>
           </div>
         </div>
@@ -343,39 +310,17 @@ export const DownloadResultDocket: FC<DownloadResultDocketProps> = ({
   // =========================================================================
   return (
     <section
-      aria-label="Split batch discharge docket"
-      className={`relative border border-border rounded-[4px] bg-card p-6 sm:p-8 space-y-6 shadow-none select-none transition-all ${className}`}
+      aria-label="Split batch download docket"
+      className={`relative border border-border rounded-xl bg-card p-6 sm:p-8 space-y-6 shadow-xs select-none transition-all ${className}`}
     >
-      {/* Architectural Corner Crop Marks */}
-      <span className="absolute top-2 left-2 text-[10px] font-mono text-muted-foreground/60 select-none leading-none">┌</span>
-      <span className="absolute top-2 right-2 text-[10px] font-mono text-muted-foreground/60 select-none leading-none">┐</span>
-      <span className="absolute bottom-2 left-2 text-[10px] font-mono text-muted-foreground/60 select-none leading-none">└</span>
-      <span className="absolute bottom-2 right-2 text-[10px] font-mono text-muted-foreground/60 select-none leading-none">┘</span>
-
       {/* Batch Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border pb-4">
-        <div className="flex items-center gap-2">
-          <Layers className="w-4 h-4 text-emerald" aria-hidden="true" />
-          <span className="font-mono text-xs uppercase tracking-wider text-emerald font-semibold">
-            {toolIdentifier} · {outputs.length} {outputs.length === 1 ? 'FILE READY' : 'FILES READY'}
-          </span>
-        </div>
-
-        <div className="flex items-center gap-3 font-mono text-xs text-muted-foreground uppercase">
-          <span>COMBINED SIZE</span>
-          <span>·</span>
-          <span className="font-semibold text-foreground">{formatFileSize(totalCombinedBytes)}</span>
-        </div>
-      </div>
-
-      {/* Batch Description */}
-      <div>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border pb-4">
         <h2 className="font-display font-bold text-xl sm:text-2xl text-foreground tracking-tight uppercase">
-          Split Output Manifest
+          Split PDF Results
         </h2>
-        <p className="text-xs sm:text-sm text-muted-foreground mt-1 leading-relaxed">
-          {outputs.length} discrete PDF {outputs.length === 1 ? 'document was' : 'documents were'} generated in browser memory. Rename individual outputs or apply a global base name before discharging.
-        </p>
+        <span className="font-mono text-xs font-semibold text-muted-foreground">
+          {outputs.length} {outputs.length === 1 ? 'file' : 'files'} · {formatFileSize(totalCombinedBytes)}
+        </span>
       </div>
 
       {/* Global Batch Base Renaming Strip */}
@@ -438,15 +383,15 @@ export const DownloadResultDocket: FC<DownloadResultDocketProps> = ({
                 </span>
 
                 <div className="space-y-1.5 min-w-0 flex-1">
-                  <div className="flex items-center gap-2 font-mono text-xs text-muted-foreground uppercase">
-                    <FileCheck className="w-3.5 h-3.5 text-primary shrink-0" aria-hidden="true" />
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <FilePdf className="w-3.5 h-3.5 text-primary shrink-0" aria-hidden="true" />
                     {item.label && <span className="font-semibold text-foreground">{item.label}</span>}
                     <span>•</span>
-                    <span>{formatFileSize(itemByteSize)}</span>
+                    <span className="font-mono">{formatFileSize(itemByteSize)}</span>
                     {item.pageCount && (
                       <>
                         <span>•</span>
-                        <span>{item.pageCount} {item.pageCount === 1 ? 'Page' : 'Pages'}</span>
+                        <span className="font-mono">{item.pageCount} {item.pageCount === 1 ? 'Page' : 'Pages'}</span>
                       </>
                     )}
                   </div>
@@ -479,8 +424,8 @@ export const DownloadResultDocket: FC<DownloadResultDocketProps> = ({
               {/* Individual Item Action Buttons */}
               <div className="flex items-center justify-end gap-2.5 shrink-0 pt-2 md:pt-0 border-t md:border-t-0 border-border/60">
                 {isItemDownloaded && (
-                  <span className="font-mono text-[11px] text-emerald flex items-center gap-1">
-                    <CheckCircle2 className="w-3.5 h-3.5" aria-hidden="true" />
+                  <span className="text-xs text-emerald flex items-center gap-1 font-medium">
+                    <CheckCircle className="w-3.5 h-3.5" aria-hidden="true" />
                     <span>Downloaded</span>
                   </span>
                 )}
@@ -490,7 +435,7 @@ export const DownloadResultDocket: FC<DownloadResultDocketProps> = ({
                   variant="outline"
                   size="sm"
                   onClick={() => setPreviewItem(item)}
-                  className="font-mono text-xs uppercase tracking-wider rounded-[3px]"
+                  className="text-xs font-semibold rounded-[3px]"
                   title={`Preview ${safeName}`}
                 >
                   <Eye className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" />
@@ -502,10 +447,10 @@ export const DownloadResultDocket: FC<DownloadResultDocketProps> = ({
                   variant="outline"
                   size="sm"
                   onClick={() => handleDownloadItem(item)}
-                  className="font-mono text-xs uppercase tracking-wider rounded-[3px]"
+                  className="text-xs font-semibold rounded-[3px]"
                   title={`Download ${safeName}`}
                 >
-                  <Download className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" />
+                  <DownloadSimple className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" />
                   <span>Download</span>
                 </Button>
               </div>
@@ -523,7 +468,7 @@ export const DownloadResultDocket: FC<DownloadResultDocketProps> = ({
               variant="outline"
               size="md"
               onClick={onBackToEditing}
-              className="font-mono text-xs uppercase tracking-wider"
+              className="text-xs font-semibold"
             >
               <ArrowLeft className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" />
               <span>Back to Editing</span>
@@ -536,9 +481,9 @@ export const DownloadResultDocket: FC<DownloadResultDocketProps> = ({
               variant="outline"
               size="md"
               onClick={onReset}
-              className="font-mono text-xs uppercase tracking-wider"
+              className="text-xs font-semibold"
             >
-              <RefreshCw className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" />
+              <ArrowsClockwise className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" />
               <span>Process Another Document</span>
             </Button>
           )}
@@ -549,10 +494,10 @@ export const DownloadResultDocket: FC<DownloadResultDocketProps> = ({
             <span
               role="status"
               aria-live="polite"
-              className="hidden sm:inline-flex items-center gap-1.5 font-mono text-xs text-emerald uppercase"
+              className="hidden sm:inline-flex items-center gap-1.5 text-xs text-emerald font-medium"
             >
-              <CheckCircle2 className="w-4 h-4" aria-hidden="true" />
-              <span>All Files Discharged</span>
+              <CheckCircle className="w-4 h-4" aria-hidden="true" />
+              <span>All Files Downloaded</span>
             </span>
           )}
 
@@ -562,12 +507,12 @@ export const DownloadResultDocket: FC<DownloadResultDocketProps> = ({
             size="md"
             disabled={isDownloadingAll}
             onClick={handleDownloadAll}
-            className="font-mono text-xs uppercase tracking-wider w-full sm:w-auto font-semibold"
+            className="text-xs font-semibold w-full sm:w-auto"
           >
-            <Download className="w-4 h-4 mr-1.5" aria-hidden="true" />
+            <DownloadSimple className="w-4 h-4 mr-1.5" aria-hidden="true" />
             <span>
               {isDownloadingAll
-                ? 'Discharging Batch...'
+                ? 'Downloading Batch...'
                 : `Download All (${outputs.length} ${outputs.length === 1 ? 'Document' : 'Documents'})`}
             </span>
           </Button>

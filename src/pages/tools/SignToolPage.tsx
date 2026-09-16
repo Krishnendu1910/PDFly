@@ -1,16 +1,17 @@
 import { useState, useEffect, useRef, type FC, type MouseEvent, type TouchEvent } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  PenTool,
+  ToolIcon,
   ArrowLeft,
   ArrowRight,
   ShieldCheck,
   Info,
-  RotateCcw,
-  CheckCircle2,
-  Layers,
+  ArrowCounterClockwise,
+  CheckCircle,
+  Stack,
   FileText,
-} from 'lucide-react';
+  Signature,
+} from '@/components/icons';
 import { ROUTES } from '@/constants/routes';
 import { PDF_ONLY_CONFIG } from '@/constants/file';
 import { useFilePipeline } from '@/hooks/useFilePipeline';
@@ -474,13 +475,10 @@ export const SignToolPage: FC = () => {
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-6 border-b border-border">
             <div className="flex items-center gap-4">
               <div className="w-14 h-14 rounded-xl bg-violet/10 text-violet dark:bg-violet/20 dark:text-violet flex items-center justify-center shrink-0">
-                <PenTool className="w-7 h-7" aria-hidden="true" />
+                <ToolIcon toolId="sign" className="w-7 h-7" weight="duotone" aria-hidden="true" />
               </div>
               <div>
                 <div className="flex items-center gap-2 mb-1">
-                  <Badge variant="success" size="sm">
-                    Client-Side Engine Active
-                  </Badge>
                   <Badge variant="outline" size="sm">
                     Sign
                   </Badge>
@@ -529,7 +527,6 @@ export const SignToolPage: FC = () => {
           <DownloadResultDocket
             outputs={[outputResult]}
             toolName="Signed Document"
-            toolIdentifier="[TOOL // 13 · SIGNATURE EMBEDDER]"
             onBackToEditing={() => setOutputResult(null)}
             onReset={handleReset}
           />
@@ -584,7 +581,7 @@ export const SignToolPage: FC = () => {
                         disabled={!hasDrawn}
                         className="text-xs text-muted-foreground hover:text-destructive flex items-center gap-1 transition-colors disabled:opacity-40"
                       >
-                        <RotateCcw className="w-3.5 h-3.5" />
+                        <ArrowCounterClockwise className="w-3.5 h-3.5" />
                         <span>Clear</span>
                       </button>
                     </div>
@@ -640,7 +637,7 @@ export const SignToolPage: FC = () => {
                               : 'bg-background border-border text-muted-foreground hover:text-foreground hover:bg-muted/50'
                           }`}
                         >
-                          <Layers className="w-3.5 h-3.5" />
+                          <Stack className="w-3.5 h-3.5" />
                           <span>All Pages</span>
                           {pageCount && (
                             <span className="text-[10px] opacity-80">({pageCount})</span>
@@ -796,7 +793,7 @@ export const SignToolPage: FC = () => {
                 <div className="pt-4 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-4">
                   <div className="text-xs text-muted-foreground">
                     <span className="text-emerald-600 dark:text-emerald-400 font-medium flex items-center gap-1.5">
-                      <CheckCircle2 className="w-4 h-4 inline" aria-hidden="true" />
+                      <CheckCircle className="w-4 h-4 inline" aria-hidden="true" />
                       {hasDrawn
                         ? scope === 'all'
                           ? `Signature ready to embed across all ${pageCount} pages.`
@@ -838,7 +835,7 @@ export const SignToolPage: FC = () => {
 
               <Card className="border-border bg-card">
                 <CardContent className="p-5 flex items-start gap-3">
-                  <PenTool className="w-5 h-5 text-primary shrink-0 mt-0.5" aria-hidden="true" />
+                  <Signature className="w-5 h-5 text-primary shrink-0 mt-0.5" aria-hidden="true" />
                   <div>
                     <h3 className="text-sm font-semibold text-foreground">Clean PNG Compression</h3>
                     <p className="text-xs text-muted-foreground mt-1 leading-relaxed">

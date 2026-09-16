@@ -1,17 +1,17 @@
 import { useState, useEffect, type FC } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  Crop,
+  ToolIcon,
   ArrowLeft,
   ArrowRight,
   ShieldCheck,
-  Zap,
-  CheckCircle2,
-  Maximize2,
-  ChevronLeft,
-  ChevronRight,
+  Lightning,
+  CheckCircle,
+  CornersOut,
+  CaretLeft,
+  CaretRight,
   Copy,
-} from 'lucide-react';
+} from '@/components/icons';
 import { ROUTES } from '@/constants/routes';
 import { PDF_ONLY_CONFIG } from '@/constants/file';
 import { useFilePipeline } from '@/hooks/useFilePipeline';
@@ -274,13 +274,10 @@ export const CropToolPage: FC = () => {
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-6 border-b border-border">
             <div className="flex items-center gap-4">
               <div className="w-14 h-14 rounded-xl bg-amber/10 text-amber dark:bg-amber/20 dark:text-amber flex items-center justify-center shrink-0">
-                <Crop className="w-7 h-7" aria-hidden="true" />
+                <ToolIcon toolId="crop" className="w-7 h-7" weight="duotone" aria-hidden="true" />
               </div>
               <div>
                 <div className="flex items-center gap-2 mb-1">
-                  <Badge variant="success" size="sm">
-                    Client-Side Engine Active
-                  </Badge>
                   <Badge variant="outline" size="sm">
                     Edit
                   </Badge>
@@ -321,7 +318,6 @@ export const CropToolPage: FC = () => {
           <DownloadResultDocket
             outputs={[outputResult]}
             toolName="Cropped Document"
-            toolIdentifier="[TOOL // 11 · MARGIN TRIMMER]"
             onBackToEditing={() => setOutputResult(null)}
             onReset={handleReset}
           />
@@ -375,7 +371,7 @@ export const CropToolPage: FC = () => {
                         onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                         className="h-8 px-2.5"
                       >
-                        <ChevronLeft className="w-4 h-4 mr-1" />
+                        <CaretLeft className="w-4 h-4 mr-1" />
                         <span>Prev</span>
                       </Button>
 
@@ -405,7 +401,7 @@ export const CropToolPage: FC = () => {
                         className="h-8 px-2.5"
                       >
                         <span>Next</span>
-                        <ChevronRight className="w-4 h-4 ml-1" />
+                        <CaretRight className="w-4 h-4 ml-1" />
                       </Button>
                     </div>
 
@@ -434,7 +430,7 @@ export const CropToolPage: FC = () => {
                   {/* Visual Preview with Overlay Frame */}
                   <div className="lg:col-span-6 flex flex-col items-center justify-center p-6 rounded-xl border border-border bg-secondary/15 min-h-[320px]">
                     <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-1.5">
-                      <Maximize2 className="w-3.5 h-3.5" />
+                      <CornersOut className="w-3.5 h-3.5" />
                       <span>Page {currentPage} Crop Preview</span>
                     </div>
 
@@ -576,7 +572,7 @@ export const CropToolPage: FC = () => {
                 <div className="pt-4 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-4">
                   <div className="text-xs text-muted-foreground">
                     <span className="text-emerald-600 dark:text-emerald-400 font-medium flex items-center gap-1.5">
-                      <CheckCircle2 className="w-4 h-4 inline" aria-hidden="true" />
+                      <CheckCircle className="w-4 h-4 inline" aria-hidden="true" />
                       Preserving {100 - (currentCrop.left + currentCrop.right)}% width &times; {100 - (currentCrop.top + currentCrop.bottom)}% height on Page {currentPage}.
                       {pageCount && pageCount > 1 && (
                         <span className="text-muted-foreground ml-1">
@@ -615,7 +611,7 @@ export const CropToolPage: FC = () => {
 
               <Card className="border-border bg-card">
                 <CardContent className="p-5 flex items-start gap-3">
-                  <Zap className="w-5 h-5 text-primary shrink-0 mt-0.5" aria-hidden="true" />
+                  <Lightning className="w-5 h-5 text-primary shrink-0 mt-0.5" aria-hidden="true" />
                   <div>
                     <h3 className="text-sm font-semibold text-foreground">Standard Reader Compatible</h3>
                     <p className="text-xs text-muted-foreground mt-1 leading-relaxed">

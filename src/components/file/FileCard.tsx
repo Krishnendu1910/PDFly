@@ -1,5 +1,5 @@
 import { type FC } from 'react';
-import { FileText, Image as ImageIcon, File, Trash2, ArrowUp, ArrowDown } from 'lucide-react';
+import { FileText, Image as ImageIcon, File, Trash, ArrowUp, ArrowDown } from '@/components/icons';
 import { Badge } from '@/components/ui/Badge';
 import { cn } from '@/lib/utils/cn';
 import type { ManagedFile } from '@/types/file';
@@ -132,7 +132,7 @@ export const FileCard: FC<FileCardProps> = ({
             'disabled:opacity-40 disabled:pointer-events-none',
           )}
         >
-          <Trash2 className="w-4 h-4" aria-hidden="true" />
+          <Trash className="w-4 h-4" aria-hidden="true" />
         </button>
       </div>
     </div>

@@ -1,7 +1,7 @@
 import { type FC } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, useReducedMotion } from 'framer-motion';
-import { ArrowRight, ShieldCheck } from 'lucide-react';
+import { ArrowRight, ShieldCheck } from '@/components/icons';
 import { ROUTES } from '@/constants/routes';
 import { Button } from '@/components/ui/Button';
 import { HeroVisual } from '@/components/marketing/HeroVisual';

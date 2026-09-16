@@ -1,6 +1,6 @@
 import { type FC } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
-import { FileUp, Cpu, Download, ArrowRight, CheckCircle2 } from 'lucide-react';
+import { FileArrowUp as FileUp, Cpu, DownloadSimple as Download, ArrowRight, CheckCircle as CheckCircle2 } from '@phosphor-icons/react';
 
 export const WorkflowVisualizer: FC = () => {
   const shouldReduceMotion = useReducedMotion();
