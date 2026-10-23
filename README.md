@@ -1,12 +1,11 @@
 # 📄 PDFly — Simple PDF Tools, Right in Your Browser
 
 <p align="center">
-  <img src="public/brand/pdfly-logo-source.png" alt="PDFly Logo" width="180" />
+  <img src="public/brand/pdfly-logo.png" alt="PDFly Logo" width="220" />
 </p>
 
 <p align="center">
-  <strong>Your PDFs. Your browser. Your control.</strong>
-  <br />
+  <strong>Your PDFs. Your browser. Your control.</strong><br />
   A privacy-focused PDF toolkit for everyday document tasks.
 </p>
 
@@ -18,7 +17,7 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=white" alt="React 19" />
-  <img src="https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white" alt="TypeScript" />
+  <img src="https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white" alt="TypeScript" />
   <img src="https://img.shields.io/badge/Vite-Build-646CFF?logo=vite&logoColor=white" alt="Vite" />
   <img src="https://img.shields.io/badge/Processing-Client--Side-2E8B57" alt="Client-side processing" />
 </p>
@@ -30,8 +29,6 @@
 **PDFly** is a browser-based PDF toolkit built to make everyday document tasks simple, accessible, and privacy-conscious.
 
 Many online PDF services upload documents to remote servers for processing. PDFly takes a different approach: **supported PDF operations are processed locally in your browser, without uploading files to a backend for processing.**
-
-Whether you need to combine documents, reorganize pages, compress a PDF, add a signature, or protect a file, PDFly brings essential tools together in one clean interface.
 
 ### 🔐 Privacy Comes First
 
@@ -81,8 +78,6 @@ You don't need to install anything to use the live website.
 
 ## 🛠️ Tech Stack
 
-PDFly combines modern frontend technologies with dedicated PDF-processing libraries.
-
 | Category | Technologies |
 |---|---|
 | Frontend | React 19, TypeScript |
@@ -102,11 +97,7 @@ PDFly combines modern frontend technologies with dedicated PDF-processing librar
 
 ## 🏗️ Run PDFly Locally
 
-Want to explore the code, learn from the implementation, or contribute improvements? Follow these steps.
-
 ### Prerequisites
-
-Install the following before starting:
 
 - [Node.js](https://nodejs.org/) — use a version supported by the project's dependencies.
 - npm — included with Node.js.
@@ -131,17 +122,9 @@ npm install
 npm run dev
 ```
 
-Open the local URL printed in your terminal, typically:
-
-```text
-http://localhost:5173
-```
-
-The development server supports hot module replacement, so supported code changes appear without manually restarting the server.
+Open the local URL printed in your terminal, typically `http://localhost:5173`.
 
 ### 4. Run checks
-
-Before submitting changes, run the available project checks:
 
 ```bash
 # Run tests
@@ -172,15 +155,11 @@ PDFly is designed to process documents locally, but client-side processing does 
 
 ## ⚙️ Production Build
 
-Create an optimized production build:
-
 ```bash
 npm run build
 ```
 
-Vite generates the production files in the `dist/` directory.
-
-You can preview the production build locally with:
+Vite generates the production files in the `dist/` directory. To preview the build locally:
 
 ```bash
 npm run preview
@@ -201,22 +180,18 @@ PDFly is a client-side single-page application and does not require a dedicated 
 
 Ensure the hosting platform supports **SPA route fallback**, so direct visits to routes such as `/tools/merge` resolve correctly.
 
-Other static hosting platforms can also work when configured with the appropriate SPA fallback and required WebAssembly/worker asset support.
-
 ## ⚠️ Limitations
 
 - **Browser memory:** Large PDFs and image-heavy documents may consume substantial memory.
 - **Device performance:** Processing speed depends on the device, browser, and document complexity.
-- **Encrypted PDFs:** Support depends on the operation and the encryption format; unsupported documents may fail.
+- **Encrypted PDFs:** Support depends on the operation and encryption format; unsupported documents may fail.
 - **PDF compatibility:** Complex layouts, unusual fonts, scanned documents, and damaged files may produce imperfect results.
 - **Image conversion:** High-resolution pages can require significant memory and processing time.
 - **Feature scope:** PDFly focuses on its existing tools; it does not claim to replace every professional PDF editor.
 
 ## 🗺️ What's Next?
 
-PDFly v1 focuses on the essential PDF workflows already available.
-
-Future improvements will be guided by practical use and feedback. Potential areas include:
+PDFly v1 focuses on the essential PDF workflows already available. Future improvements will be guided by practical use and feedback. Potential areas include:
 
 - PDF repair
 - PDF flattening
@@ -231,18 +206,15 @@ These are possible future additions, not promises of availability in the current
 
 **Your feedback can help shape the next version of PDFly.**
 
-Try the live application and let me know:
-
 - What worked well?
 - What was confusing?
 - Did you encounter a bug?
 - Which feature would make PDFly more useful?
 
-🔗 **[Try PDFly](https://pdfly-rho.vercel.app/)**
-
+🔗 **[Try PDFly](https://pdfly-rho.vercel.app/)**  
 🐛 **[Report an issue](https://github.com/Krishnendu1910/PDFly/issues)**
 
-⭐ If you find PDFly useful, consider starring the repository on GitHub.
+If you find PDFly useful, consider starring the repository on GitHub.
 
 ## 📄 License
 
@@ -253,8 +225,7 @@ The source repository is available for viewing under its current access settings
 ---
 
 <p align="center">
-  <strong>Built with care by Krishnendu Sarkar.</strong>
-  <br />
+  <strong>Built with care by Krishnendu Sarkar.</strong><br />
   <a href="https://www.linkedin.com/in/krishnendu-sarkar19/">LinkedIn</a>
   ·
   <a href="https://github.com/Krishnendu1910">GitHub</a>
