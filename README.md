@@ -1,136 +1,263 @@
-# PDFly — Simple PDF Tools, Right in Your Browser
+# 📄 PDFly — Simple PDF Tools, Right in Your Browser
 
-PDFly is a fast, privacy-respecting, client-side web application for everyday PDF tasks. Unlike standard online PDF utilities that upload sensitive documents to remote servers, PDFly performs document parsing, page manipulation, image conversion, and compression directly inside your browser.
+<p align="center">
+  <img src="public/brand/pdfly-logo-source.png" alt="PDFly Logo" width="180" />
+</p>
 
-> **Privacy Guarantee**: Files are processed locally in the browser and are not uploaded for processing.
+<p align="center">
+  <strong>Your PDFs. Your browser. Your control.</strong>
+  <br />
+  A privacy-focused PDF toolkit for everyday document tasks.
+</p>
 
----
+<p align="center">
+  <a href="https://pdfly-rho.vercel.app/"><strong>🌐 Open PDFly</strong></a>
+  ·
+  <a href="https://github.com/Krishnendu1910/PDFly"><strong>💻 View Source</strong></a>
+</p>
 
-## Features
-
-PDFly provides focused, single-purpose utilities for working with PDF documents:
-
-* **Merge PDF** (`/tools/merge`): Combine multiple PDF documents into a single file, preserving original order, page contents, and vector text.
-* **Split PDF** (`/tools/split`): Extract specific pages, discrete page ranges (e.g. `1-3, 5, 8-10`), or extract all pages into a new document.
-* **Reorder PDF** (`/tools/reorder`): Interactively reorganize page sequence via drag-and-drop or accessible keyboard controls.
-* **Rotate PDF** (`/tools/rotate`): Permanently adjust document page orientations (90°, 180°, 270° clockwise) individually or in bulk without re-rasterizing text.
-* **Images to PDF** (`/tools/images-to-pdf`): Convert JPEG, PNG, and WebP images into a standardized PDF, with EXIF orientation normalization (including mirrored orientations) and proportional scaling.
-* **Compress PDF** (`/tools/compress`): Reduce PDF file sizes by selectively optimizing embedded JPEG image streams while preserving vector lines, selectable text, and document geometry.
-* **PDF to Images** (`/tools/pdf-to-images`): **Coming Soon** — Interface shell and routing established; conversion engine planned for a future update.
-
----
-
-## Tech Stack
-
-* **Framework & Build**: [React 18](https://react.dev/), [TypeScript 5](https://www.typescriptlang.org/), [Vite 6](https://vite.dev/)
-* **Routing**: [React Router v6](https://reactrouter.com/) (Single Page Application architecture)
-* **Styling & Animation**: [Tailwind CSS v3](https://tailwindcss.com/), [Framer Motion](https://www.framer.com/motion/)
-* **Icons**: [Lucide React](https://lucide.dev/)
-* **PDF Manipulation Engine**: [`pdf-lib`](https://pdf-lib.js.org/) (pure client-side PDF generation and page tree assembly)
-* **PDF Rendering Engine**: [`pdfjs-dist`](https://mozilla.github.io/pdf.js/) (sandboxed web worker for thumbnail extraction)
-* **Testing**: [Vitest](https://vitest.dev/) with jsdom
+<p align="center">
+  <img src="https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=white" alt="React 19" />
+  <img src="https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white" alt="TypeScript" />
+  <img src="https://img.shields.io/badge/Vite-Build-646CFF?logo=vite&logoColor=white" alt="Vite" />
+  <img src="https://img.shields.io/badge/Processing-Client--Side-2E8B57" alt="Client-side processing" />
+</p>
 
 ---
 
-## Architecture & Security Posture
+## ✨ What Is PDFly?
 
-1. **Client-Side Processing**: All document parsing, manipulation, and rendering run entirely inside the user's browser memory. Files are processed locally in the browser and are not uploaded for processing. The application contains no analytics or telemetry trackers.
-2. **Worker Isolation**: PDF thumbnail rendering is delegated to a dedicated PDF.js web worker (`pdf.worker.min.mjs`), isolated from the main UI thread.
-3. **Execution Hardening**: PDF.js is initialized with `enableScripting: false` (blocking embedded PDF JavaScript) and `isEvalSupported: false` (preventing dynamic code evaluation).
-4. **Defensive Resource Limits**:
-   * Split range expansion limit: 2,000 pages max per operation.
-   * Cumulative merge limit: 5,000 pages max across input files.
-   * Reorder & rotate limits: 2,000 pages max per document.
-   * Batch image conversion limit: 100 images max per operation.
-   * Canvas dimension safety boundary: 8,192px maximum dimension to prevent browser tab crashes.
-5. **Memory Cleanup**: Ephemeral `blob:` object URLs are revoked immediately after preview rendering or download triggering. PDF.js document and page handles are destroyed in `finally` blocks.
-6. **Download Integrity**: Generated PDF downloads are atomically validated against the standard `%PDF-` magic byte signature before initiating browser downloads, and output filenames are sanitized against path traversal and OS device names.
+**PDFly** is a browser-based PDF toolkit built to make everyday document tasks simple, accessible, and privacy-conscious.
 
----
+Many online PDF services upload documents to remote servers for processing. PDFly takes a different approach: **supported PDF operations are processed locally in your browser, without uploading files to a backend for processing.**
 
-## Local Development
+Whether you need to combine documents, reorganize pages, compress a PDF, add a signature, or protect a file, PDFly brings essential tools together in one clean interface.
+
+### 🔐 Privacy Comes First
+
+- **Local processing:** Supported document operations run directly in your browser.
+- **No processing uploads:** Your files are not uploaded to a backend for processing.
+- **No document-processing telemetry:** PDFly does not use analytics or telemetry to track document processing.
+- **You stay in control:** Generated files can be downloaded directly to your device.
+
+> **Your documents should remain under your control.**
+
+## 🧰 Features
+
+PDFly includes **15 PDF tools** for everyday document workflows.
+
+| Tool | What it does |
+|---|---|
+| 📑 **Merge PDF** | Combine multiple PDFs into one document. |
+| ✂️ **Split PDF** | Divide a PDF into separate documents using pages or ranges. |
+| 🔀 **Reorder PDF** | Rearrange pages into your preferred sequence. |
+| 🔄 **Rotate PDF** | Rotate individual pages or an entire document. |
+| 🗑️ **Remove Pages** | Remove unwanted pages from a PDF. |
+| 📃 **Extract Pages** | Select specific pages and create a new PDF. |
+| 🖼️ **Images to PDF** | Turn supported images into a PDF document. |
+| 🎞️ **PDF to Images** | Render PDF pages as images. |
+| 📝 **PDF to Markdown** | Extract document text into Markdown-oriented content. |
+| 📦 **Compress PDF** | Reduce PDF file size through supported image optimization. |
+| 🔢 **Page Numbers** | Add page numbers to your document. |
+| 💧 **Watermark PDF** | Add customizable text watermarks. |
+| 📐 **Crop PDF** | Adjust visible page boundaries. |
+| ✍️ **Sign PDF** | Place a visual signature on PDF pages. |
+| 🔒 **Protect / Unlock PDF** | Apply password protection or unlock supported encrypted PDFs. |
+
+*Results depend on document structure, browser capabilities, and the operation being performed.*
+
+## 🚀 How to Use PDFly
+
+You don't need to install anything to use the live website.
+
+1. **Open PDFly:** Visit [pdfly-rho.vercel.app](https://pdfly-rho.vercel.app/).
+2. **Choose a tool:** Select the PDF operation you need.
+3. **Add your file:** Select a PDF or supported image files from your device.
+4. **Configure the operation:** Choose pages, settings, output options, or other available controls.
+5. **Process your document:** Let your browser perform the supported operation.
+6. **Download your result:** Review the output filename and download the generated file.
+
+**That's it. No account required to get started.**
+
+## 🛠️ Tech Stack
+
+PDFly combines modern frontend technologies with dedicated PDF-processing libraries.
+
+| Category | Technologies |
+|---|---|
+| Frontend | React 19, TypeScript |
+| Build Tool | Vite |
+| Styling | Tailwind CSS v4 |
+| Routing | React Router |
+| Animation | Framer Motion |
+| Typography | Manrope, DM Mono |
+| Icons | Phosphor Icons |
+| PDF Manipulation | pdf-lib |
+| PDF Rendering & Text Extraction | PDF.js (`pdfjs-dist`) |
+| Encryption & Decryption | QPDF WebAssembly |
+| Background Processing | Web Workers where applicable |
+| Testing | Vitest, React Testing Library |
+| Code Quality | ESLint, TypeScript type checking |
+| Deployment | Vercel |
+
+## 🏗️ Run PDFly Locally
+
+Want to explore the code, learn from the implementation, or contribute improvements? Follow these steps.
 
 ### Prerequisites
 
-* Node.js 18+ or 20+
-* npm 9+
+Install the following before starting:
 
-### Setup
+- [Node.js](https://nodejs.org/) — use a version supported by the project's dependencies.
+- npm — included with Node.js.
+- [Git](https://git-scm.com/).
+
+### 1. Clone the repository
 
 ```bash
-# Clone the repository
 git clone https://github.com/Krishnendu1910/PDFly.git
 cd PDFly
+```
 
-# Install dependencies
+### 2. Install dependencies
+
+```bash
 npm install
+```
 
-# Start local development server
+### 3. Start the development server
+
+```bash
 npm run dev
 ```
 
-The local development server will start at `http://localhost:5173`.
+Open the local URL printed in your terminal, typically:
 
-### Verification Commands
+```text
+http://localhost:5173
+```
+
+The development server supports hot module replacement, so supported code changes appear without manually restarting the server.
+
+### 4. Run checks
+
+Before submitting changes, run the available project checks:
 
 ```bash
-# Run unit and security test suites (161 tests)
+# Run tests
 npm test -- --run
 
-# Run ESLint
+# Check code quality
 npm run lint
 
-# Run TypeScript type check
+# Check TypeScript types
 npm run type-check
 
-# Run production build
+# Create a production build
 npm run build
 ```
 
----
+## 🔒 Security & Engineering
 
-## Production Build
+PDF processing requires careful handling of untrusted files and browser resources. PDFly incorporates safeguards intended to make document handling more robust.
 
-To build the static production distribution:
+- **Hardened PDF.js configuration:** Embedded scripting is disabled, and dynamic evaluation support is turned off.
+- **Defensive resource limits:** Limits apply to selected page operations, cumulative merge size, image batches, and canvas dimensions.
+- **Encrypted document handling:** Encrypted PDFs are handled explicitly rather than silently bypassing encryption checks.
+- **Output filename sanitization:** Generated filenames are sanitized to reduce risks from unsafe names and path-like input.
+- **Resource cleanup:** Temporary object URLs and PDF.js document resources are cleaned up when no longer needed.
+- **Output validation:** Generated PDF output is checked for the expected PDF file signature before downloading.
+
+PDFly is designed to process documents locally, but client-side processing does not eliminate every possible risk or guarantee that every PDF will work correctly.
+
+## ⚙️ Production Build
+
+Create an optimized production build:
 
 ```bash
 npm run build
 ```
 
-The output is written to the `dist/` directory:
-* Standard static assets (HTML, CSS, JavaScript, SVG)
-* Pre-bundled PDF.js web worker (`dist/assets/pdf.worker.min-*.mjs`)
-* Fully self-contained SPA suitable for static hosting
+Vite generates the production files in the `dist/` directory.
+
+You can preview the production build locally with:
+
+```bash
+npm run preview
+```
+
+## ☁️ Deployment
+
+PDFly is a client-side single-page application and does not require a dedicated application backend for its supported PDF operations.
+
+### Deploy with Vercel
+
+1. Push your repository to GitHub.
+2. Sign in to [Vercel](https://vercel.com/).
+3. Import the PDFly repository.
+4. Confirm the build command is `npm run build`.
+5. Set the output directory to `dist`.
+6. Deploy the application.
+
+Ensure the hosting platform supports **SPA route fallback**, so direct visits to routes such as `/tools/merge` resolve correctly.
+
+Other static hosting platforms can also work when configured with the appropriate SPA fallback and required WebAssembly/worker asset support.
+
+## ⚠️ Limitations
+
+- **Browser memory:** Large PDFs and image-heavy documents may consume substantial memory.
+- **Device performance:** Processing speed depends on the device, browser, and document complexity.
+- **Encrypted PDFs:** Support depends on the operation and the encryption format; unsupported documents may fail.
+- **PDF compatibility:** Complex layouts, unusual fonts, scanned documents, and damaged files may produce imperfect results.
+- **Image conversion:** High-resolution pages can require significant memory and processing time.
+- **Feature scope:** PDFly focuses on its existing tools; it does not claim to replace every professional PDF editor.
+
+## 🗺️ What's Next?
+
+PDFly v1 focuses on the essential PDF workflows already available.
+
+Future improvements will be guided by practical use and feedback. Potential areas include:
+
+- PDF repair
+- PDF flattening
+- Secure redaction
+- Metadata removal
+- PDF scanning
+- Further performance, compatibility, and usability improvements
+
+These are possible future additions, not promises of availability in the current release.
+
+## 💬 Feedback & Contributions
+
+**Your feedback can help shape the next version of PDFly.**
+
+Try the live application and let me know:
+
+- What worked well?
+- What was confusing?
+- Did you encounter a bug?
+- Which feature would make PDFly more useful?
+
+🔗 **[Try PDFly](https://pdfly-rho.vercel.app/)**
+
+🐛 **[Report an issue](https://github.com/Krishnendu1910/PDFly/issues)**
+
+⭐ If you find PDFly useful, consider starring the repository on GitHub.
+
+## 📄 License
+
+PDFly is currently **private and proprietary**. All rights reserved.
+
+The source repository is available for viewing under its current access settings; viewing or cloning the code does not grant permission to redistribute, modify, or commercially use it without authorization.
 
 ---
 
-## Deployment
-
-PDFly is a client-side Single Page Application (SPA) that requires no backend server or database. It can be deployed to any static hosting provider.
-
-### Recommended Providers
-
-* **Vercel**: Configuration is provided in `vercel.json` with SPA route rewrites.
-* **Cloudflare Pages / Netlify**: Configuration is provided in `public/_redirects` (`/* /index.html 200`) for SPA history fallback.
-* **GitHub Pages**: Can be served via GitHub Actions deploying the `dist/` directory.
-
-### Requirements for Static Hosting
-
-* HTTPS enabled (required for modern Web APIs like `createImageBitmap` and `crypto.randomUUID`).
-* SPA fallback: All non-asset routes (e.g. `/tools/merge`, `/privacy`) must resolve to `index.html` with HTTP 200.
-
----
-
-## Technical Limitations
-
-* **Browser Memory Constraints**: Because all operations run in client RAM, processing extremely large documents (e.g., >100 MB files or hundreds of uncompressed scan images) may reach browser tab memory limits on constrained devices.
-* **Encrypted Documents**: Password-protected and encrypted PDFs cannot be processed. Users must remove document passwords before uploading.
-* **CPU Intensity**: Complex operations like image recompression and thumbnail rendering run on the user's CPU; processing time is dependent on local hardware capabilities.
-* **Browser Canvas Boundaries**: Canvas allocations are bounded to 8,192px max dimension to prevent out-of-memory errors on mobile browsers.
-
----
-
-## License
-
-This project is currently private and proprietary. All rights reserved.
-
+<p align="center">
+  <strong>Built with care by Krishnendu Sarkar.</strong>
+  <br />
+  <a href="https://www.linkedin.com/in/krishnendu-sarkar19/">LinkedIn</a>
+  ·
+  <a href="https://github.com/Krishnendu1910">GitHub</a>
+  ·
+  <a href="https://pdfly-rho.vercel.app/">PDFly Live</a>
+</p>
